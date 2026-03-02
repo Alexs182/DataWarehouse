@@ -1,0 +1,18 @@
+job_name: "iss_now_ingestion"
+source_name: "iss_now"
+
+extract:
+  endpoint: "http://api.open-notify.org/iss-now.json"
+  method: "GET"
+  params: {}
+  mapper: "iss_now"
+  connector_type: "http_connector"
+
+target:
+  connector_type: "postgres_connector"
+  execution_type: "write"
+  connection: "data_warehouse"
+  database: "spark_warehouse_dev"
+  schema: "develop"
+  table: "iss_now_silver"
+  write_mode: "append"

@@ -1,0 +1,33 @@
+services:
+  mongo:
+    image: mongo:8.0 
+    container_name: sw_mongodb
+    ports:
+      - "27017:27017" # Expose MongoDB on the default port
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root # Set the admin username
+      MONGO_INITDB_ROOT_PASSWORD: password # Set the admin password
+    volumes:
+      - mongo-data:/data/db # Persist MongoDB data
+      - mongo-config:/data/configdb # Persist MongoDB configuration
+
+  postgres:
+    container_name: sw_postgres
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./scripts/create-db.sql:/docker-entrypoint-initdb.d/create_database.sql
+    environment:
+      POSTGRES_PASSWORD: pass 
+      POSTGRES_USER: user 
+      POSTGRES_DB: main
+
+
+volumes:
+  mongo-data:
+    driver: local
+  mongo-config:
+    driver: local
+  pgdata:
