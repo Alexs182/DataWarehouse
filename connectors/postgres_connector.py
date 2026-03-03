@@ -1,61 +1,52 @@
 
 import os
+import json
+import logging
 from typing import Optional, Dict, Any
 
 from dotenv import load_dotenv
 import pandas as pd
+import sqlalchemy
 
 from connectors.common import Common
 
 class Connector(Common):
 
-    def __init__(
-            self, 
-            mapper: Optional[str] = None
-        ):
-
+    def __init__(self, connection: str, mapper: Optional[str] = None):
         load_dotenv()
+        self.logger = logging.getLogger(__name__)
+        self.connection = connection
 
         if mapper:
             self.mapper = self.get_mapper(mapper)
         else:
             self.mapper = None
-
-        self.server_url: str = None
-
-    def _configure(
-            self,
-            connection: str,
-            database: str
-        ):
         
-        self.server_url = f"{os.getenv(connection)}/{database}"
+        self.server_url = f"{os.getenv(self.connection)}"
+        if self.server_url == "None":
+            self.logger.error(f"Connection: {self.connection} not found in environment variables, check .env file and config.")
+            raise Exception("Postgres connection url not found.")
 
-    def _build_schema(self):
-        pass
+    def _write_data(self, dataframe, write_mode: str, schema: str, table: str):
 
-    def _write_data(
-            self,
-            dataframe,
-            write_mode: str,
-            schema: str,
-            table: str
-        ):
+        dataframe['entity'] = dataframe['entity'].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x )
 
-        dataframe.to_sql(
-            name=table,
-            con=self.server_url,
-            schema=schema,
-            if_exists=write_mode,
-            index=False,
-            chunksize=100
-        )
+        try:
+            dataframe.to_sql(
+                name=table,
+                con=self.server_url,
+                schema=schema,
+                if_exists=write_mode,
+                index=False,
+                chunksize=100
+            )
+        except pd.errors.DatabaseError as e:
+            self.logger.error(f"Postgres Write error: {e}")
+        except sqlalchemy.exc.ArgumentError as e:
+            self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
 
-    def _read_data(
-            self,
-            schema: str,
-            table: str
-        ):
+
+    def _read_data(self, schema: str, table: str):
 
         dataframe = self.spark.read \
             .format("jdbc") \
@@ -72,17 +63,7 @@ class Connector(Common):
         return dataframe
             
 
-    def run(
-            self,
-            config: Dict[str, Any],
-            dataframe = None,
-        ):
-
-        self._configure(
-            connection=config.get("connection"),
-            database=config.get("database")
-        )
-
+    def run(self, config: Dict[str, Any], dataframe = None):
         match config.get("execution_type").lower():
             case "read":
                 dataframe = self._read_data(
@@ -98,7 +79,8 @@ class Connector(Common):
                     config.get("table")
                 )
             case _:
-                raise ValueError("Invalid exeuction type for Postgres connector, should be either read or write.")
+                self.logger.error("No valid postgres execution_type in configuration.")
+                raise ValueError("Invalid execution type for Postgres connector, should be either read or write.")
 
         return None       
     
