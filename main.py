@@ -101,21 +101,24 @@ def setup_logs(loglevel: str, job_name: str):
 
     logger = logging.getLogger(__name__)
 
-    match loglevel.lower():
-        case "notset":
-            logger.setLevel(logging.NOTSET)
-        case "debug":
-            logger.setLevel(logging.DEBUG)
-        case "info":
-            logger.setLevel(logging.INFO)
-        case "warning":
-            logger.setLevel(logging.WARNING)
-        case "error":
-            logger.setLevel(logging.ERROR)
-        case "critical":
-            logger.setLevel(logging.CRITICAL)
-        case _:
-            logger.setLevel(logging.INFO)
+    if loglevel:
+        match loglevel.lower():
+            case "notset":
+                logger.setLevel(logging.NOTSET)
+            case "debug":
+                logger.setLevel(logging.DEBUG)
+            case "info":
+                logger.setLevel(logging.INFO)
+            case "warning":
+                logger.setLevel(logging.WARNING)
+            case "error":
+                logger.setLevel(logging.ERROR)
+            case "critical":
+                logger.setLevel(logging.CRITICAL)
+            case _:
+                logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.INFO)
     
     return logger
 
