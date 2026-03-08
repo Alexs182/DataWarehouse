@@ -31,6 +31,12 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   data_warehouse:
-    # Config indicated by + and applies to all files under models/example/
-    example:
+    staging:
+      +schema: staging
       +materialized: view
+    bronze:
+      +schema: bronze
+      +materialized: incremental
+    silver:
+      +schema: silver
+      +materialized: incremental
