@@ -6,17 +6,17 @@ WITH
         SELECT
             event_id,
             entity_id,
-            event_occurred_timestamp,
-            entity::json->'timestamp' as timestamp,
-            entity::json->'message' as message,
-            entity::json->'latitude' as latitude,
-            entity::json->'longitude' as longitude,
+            TO_TIMESTAMP(event_occurred_timestamp, 'YYYY-MM-DD HH24:MI:SS.FF6') as event_occurred_timestamp,
+            entity::json->>'timestamp' as timestamp,
+            entity::json->>'message' as message,
+            entity::json->>'latitude' as latitude,
+            entity::json->>'longitude' as longitude,
             _ingestion_timestamp,
             _source_name,
             _source_path
         FROM {{ source('raw', 'iss_now') }}
         {% if is_incremental() %}
-            WHERE event_occurred_timestamp > (SELECT MAX(event_occurred_timestamp) from {{ this }})
+            WHERE TO_TIMESTAMP(event_occurred_timestamp, 'YYYY-MM-DD HH24:MI:SS.FF6') > (SELECT MAX(event_occurred_timestamp) from {{ this }})
         {% endif %}
     ),
 

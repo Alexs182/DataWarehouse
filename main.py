@@ -25,7 +25,11 @@ class Run:
 
     def _extract(self, config: dict[str, any]):
         connector_module = self._get_module("connectors", config.get('connector_type'))
-        dataframe = connector_module.Connector(config.get("mapper")).run(config=config)
+        dataframe = connector_module.Connector(
+            config.get("mapper")
+        ).run(
+            config=config
+        )
 
         self._write_to_datastore(dataframe=dataframe, config=self.config)
 
