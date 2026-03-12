@@ -1,5 +1,12 @@
-
-{{ config(materialized='incremental', unique_key='event_id') }}
+{{ config(
+    materialized='incremental', 
+    unique_key='event_id',
+    meta={
+        "elementary": {
+        "timestamp_column": "event_occurred_timestamp" 
+        }
+    }
+) }}
 
 WITH
     BASE_DATA as (

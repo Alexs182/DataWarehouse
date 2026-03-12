@@ -40,3 +40,6 @@ models:
     silver:
       +schema: silver
       +materialized: incremental
+      
+  elementary:
+    +schema: elementary
