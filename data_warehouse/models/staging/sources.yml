@@ -5,3 +5,19 @@ sources:
     schema: staging
     tables: 
       - name: iss_now
+        meta:
+          elementary:
+            timestamp_column: "event_occurred_timestamp"
+        loaded_at_field: event_occurred_timestamp
+        freshness:
+          warn_after: {count: 6, period: hour}
+          error_after: {count: 24, period: hour}
+        tests:
+          - elementary.volume_anomalies
+          - elementary.freshness_anomalies
+          - elementary.schema_changes
+        columns:
+          - name: event_id
+            tests:
+              - unique
+              - not_null
