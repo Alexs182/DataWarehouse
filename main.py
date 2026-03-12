@@ -6,8 +6,9 @@ import logging
 import importlib
 
 class Run:
-    def __init__(self, config):
+    def __init__(self, config, drun):
         self.config = config
+        self.drun = drun
         self.logger = logging.getLogger(__name__)
         self.job_name = self.config['job_name']
 
@@ -30,6 +31,9 @@ class Run:
         ).run(
             config=config
         )
+
+        if self.drun:
+            self.logger.info(f"_extract: {dataframe}")
 
         self._write_to_datastore(dataframe=dataframe, config=self.config)
 
@@ -77,10 +81,18 @@ class Run:
     
         self.logger.info(f"Records processed: {records_processed}")
 
-def run_job(config_file: str, logger):
+def run_job(config_file: str, logger, mode: str):
+    if mode == "dryrun":
+        drun = True
+    else:
+        drun = False
+
     config = get_config(config_file, logger)
 
-    Run(config).execute() 
+    if drun:
+        logger.info(config)
+
+    Run(config, drun).execute() 
 
 
 def get_config(config_file: str, logger):
@@ -135,6 +147,7 @@ def add_args():
 
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to config file")
     parser.add_argument("-l", "--loglevel", type=str, help="Level for the logs, default Info")
+    parser.add_argument("-m", "--mode", type=str, help="Run mode, accepted values dryrun or None (normal)")
 
     args = parser.parse_args()
 
@@ -143,6 +156,7 @@ def add_args():
 
 if __name__ == "__main__":
     args = add_args()
+    mode = args.mode
     config = args.config
     logger = setup_logs(args.loglevel, config.split("/")[-1][:-5])
-    run_job(config, logger)
+    run_job(config, logger, mode)
