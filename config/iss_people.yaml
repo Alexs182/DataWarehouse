@@ -1,0 +1,17 @@
+job_name: "iss_people_ingestion"
+
+extract:
+  source_name: "open-notify"
+  endpoint: "http://api.open-notify.org/astros.json"
+  method: "GET"
+  params: {}
+  mapper: "iss_people"
+  connector_type: "http_connector"
+
+target:
+  connector_type: "postgres_connector"
+  execution_type: "write"
+  connection: "data_warehouse"
+  schema: "staging"
+  table: "iss_people"
+  write_mode: "append"
