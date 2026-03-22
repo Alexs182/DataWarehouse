@@ -26,11 +26,12 @@ class Run:
     def _extract(self, config: dict[str, any]):
         connector_module = self._get_module("connectors", config.get('connector_type'))
         dataframe = connector_module.Connector(
-            config.get("mapper")
+            config.get("mapper"),
+            self.logger
         ).run(
             config=config
         )
-
+        
         self._write_to_datastore(dataframe=dataframe, config=self.config)
 
         return len(dataframe)
@@ -79,7 +80,6 @@ class Run:
 
 def run_job(config_file: str, logger):
     config = get_config(config_file, logger)
-
     Run(config).execute() 
 
 

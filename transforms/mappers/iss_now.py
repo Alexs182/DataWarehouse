@@ -12,7 +12,7 @@ class Mapper(MapAssist):
 
         self.map_output.append({
             "event_id": f"{self.entity_type}_{self.event_classifier}_{key}",
-            "entity_id": f"{self.entity_type}_{self.event_classifier}_{key}",
+            "entity_id": f"{self.entity_type}_{key}",
             "entity": {
                 "timestamp":        str(data.get('timestamp')),
                 "message":          str(data.get('message')),
