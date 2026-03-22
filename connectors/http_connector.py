@@ -14,8 +14,9 @@ class Connector(Common):
             mapper: str,
             logger
         ):
-        self.mapper = self.get_mapper(mapper) if mapper else None
         self.logger = logger
+        self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
+        
         self.raw_data = None
 
     def get_raw_response_data(self):

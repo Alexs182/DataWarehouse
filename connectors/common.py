@@ -9,10 +9,16 @@ class Common():
     def __init__(self):
         self.mapper = None
 
-    def get_mapper(self, map):
-        module = importlib.import_module(f'transforms.mappers.{map}')
-        self.mapper = module.Mapper()
-        return self.mapper
+    def get_mapper(self, map: str, logger):
+        mapper = None
+
+        try:
+            module = importlib.import_module(f'transforms.mappers.{map}')
+            mapper = module.Mapper()
+        except ModuleNotFoundError as e:
+            logger.warn(f"No mapping module found for {map}. Trace: {e}")
+        
+        return mapper
     
     def map_data(self, records: List[Dict[str, any]]) -> List[Dict[str, any]]:
             
