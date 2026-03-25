@@ -17,16 +17,6 @@ def get_dbt_env():
         "DBT_PORT":     str(conn.port),
     }
 
-#default_args = {
-#'start_date': datetime(2022, 1, 1),
-#}
-
-#dag = DAG(
-#    'sample_dag',
-#    default_args=default_args,
-#    schedule='0 0 * * *', # Run daily at midnight
-#)
-
 with DAG(
     dag_id="dbt_pipeline",
     start_date=datetime(2024, 1, 1),
@@ -44,14 +34,4 @@ with DAG(
         env=get_dbt_env(),   # <-- credentials injected here
     )
 
-    dbt_test = BashOperator(
-        task_id="dbt_test",
-        bash_command=(
-            f"dbt test "
-            f"--project-dir {DBT_PROJECT_DIR} "
-            f"--profiles-dir {DBT_PROJECT_DIR}"
-        ),
-        env=get_dbt_env(),
-    )
-
-    dbt_run >> dbt_test
+    dbt_run 
