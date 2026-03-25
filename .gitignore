@@ -1,6 +1,8 @@
 config/airflow.cfg
 *.dbtvenv
 
+logs/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
