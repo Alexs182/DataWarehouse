@@ -3,7 +3,6 @@ pandas==3.0.1
 SQLAlchemy==2.0.48
 PyYAML==6.0.3
 dotenv==0.9.9
-psycopg2-binary==2.9.11
-dbt-core==1.11.7
-dbt-postgres==1.10.0
-elementary-data==0.22.0
+astronomer-cosmos==1.13.1
+apache-airflow-providers-fab
+apache-airflow-providers-openlineage==1.8.0
