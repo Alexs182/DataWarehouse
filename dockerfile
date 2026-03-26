@@ -4,8 +4,12 @@ USER root
 RUN apt-get update && apt-get install -y git
 
 USER airflow
-# Install dbt — swap adapter as needed (bigquery, snowflake, redshift, etc.)
-RUN pip install dbt-core dbt-postgres requests urllib3 charset-normalizer
 
-# Copy the dbt project into the image
+RUN pip install --no-cache-dir\
+    dbt-core \
+    dbt-postgres \
+    "requests==2.31.0" \
+    "urllib3==2.2.3" \
+    "charset-normalizer==3.3.2"
+
 COPY data_warehouse/ /opt/airflow/data_warehouse/
