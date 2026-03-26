@@ -10,6 +10,8 @@ RUN pip install --no-cache-dir\
     dbt-postgres \
     "requests==2.31.0" \
     "urllib3==2.2.3" \
-    "charset-normalizer==3.3.2"
+    "charset-normalizer==3.3.2"\
+    "chardet==5.2.0" \
+    "gcloud-aio-auth"
 
 COPY data_warehouse/ /opt/airflow/data_warehouse/
