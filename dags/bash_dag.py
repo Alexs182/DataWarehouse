@@ -30,6 +30,7 @@ with DAG(
             f"/home/airflow/.local/bin/dbt run "
             f"--project-dir {DBT_PROJECT_DIR} "
             f"--profiles-dir {DBT_PROJECT_DIR}"
+            2>&1
         ),
         env=get_dbt_env(),   # <-- credentials injected here
     )
