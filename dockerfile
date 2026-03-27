@@ -3,6 +3,12 @@ FROM apache/airflow:3.1.8
 USER root
 RUN apt-get update && apt-get install -y git
 
+COPY data_warehouse/ /opt/airflow/data_warehouse/
+
+RUN mkdir -p /opt/airflow/data_warehouse/target && \
+    chown -R airflow: /opt/airflow/data_warehouse && \
+    chmod -R 775 /opt/airflow/data_warehouse
+
 USER airflow
 
 RUN pip install --no-cache-dir\
@@ -14,4 +20,4 @@ RUN pip install --no-cache-dir\
     "chardet==5.2.0" \
     "gcloud-aio-auth"
 
-COPY data_warehouse/ /opt/airflow/data_warehouse/
+

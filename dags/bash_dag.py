@@ -24,15 +24,27 @@ with DAG(
     catchup=False,
 ) as dag:
 
+#    dbt_deps = BashOperator(
+#        task_id="dbt_deps",
+#        bash_command=(
+#            f"/home/airflow/.local/bin/dbt deps "
+#            f"--project-dir {DBT_PROJECT_DIR} "
+#            f"--profiles-dir {DBT_PROJECT_DIR} "
+#        ),
+#        env=get_dbt_env(),   # <-- credentials injected here
+#    )
+
+
     dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command=(
             f"/home/airflow/.local/bin/dbt run "
             f"--project-dir {DBT_PROJECT_DIR} "
-            f"--profiles-dir {DBT_PROJECT_DIR}"
-            2>&1
+            f"--profiles-dir {DBT_PROJECT_DIR} "
+            "2>&1"
         ),
         env=get_dbt_env(),   # <-- credentials injected here
     )
 
-    dbt_run 
+#    dbt_deps >> dbt_run
+    dbt_run
