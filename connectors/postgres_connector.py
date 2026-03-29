@@ -18,7 +18,7 @@ class Connector(Common):
         self.connection = connection
 
         if mapper:
-            self.mapper = self.get_mapper(mapper)
+            self.mapper = self.get_mapper(mapper, self.logger)
         else:
             self.mapper = None
         
@@ -47,15 +47,17 @@ class Connector(Common):
 
 
     def _read_data(self, schema: str, table: str):
+        dataframe = list[dict{str, any}]
 
-        dataframe = self.spark.read \
-            .format("jdbc") \
-            .option("url", self.server_url) \
-            .option("dbtable", f"{schema}.{table}") \
-            .option("user", self.server_username) \
-            .option("password", self.server_password) \
-            .option("driver", "org.postgresql.Driver") \
-            .load()
+        try:
+            dataframe = pd.read_sql_table(
+                con=self.server_url,
+                table_name=table,
+                schema=schema
+            )
+        except Exception as e:
+            self.logger.error(f"{e}")
+
         
         if self.mapper:
             dataframe = self.map_data(dataframe)
@@ -64,19 +66,19 @@ class Connector(Common):
             
 
     def run(self, config: Dict[str, Any], dataframe = None):
-        match config.get("execution_type").lower():
+        match config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
-                    config.get("schema"),
-                    config.get("table")
+                    config.get("schema", ""),
+                    config.get("table", "")
                 )
                 return dataframe
             case "write":
                 self._write_data(
                     dataframe,
-                    config.get("write_mode"),
-                    config.get("schema"),
-                    config.get("table")
+                    config.get("write_mode", ""),
+                    config.get("schema", ""),
+                    config.get("table", "")
                 )
             case _:
                 self.logger.error("No valid postgres execution_type in configuration.")
