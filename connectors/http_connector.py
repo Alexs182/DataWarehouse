@@ -1,5 +1,4 @@
 
-import logging
 from typing import Dict, List, Optional, Any
 
 import pandas as pd
@@ -63,7 +62,11 @@ class Connector(Common):
             
         self.fetch(endpoint=endpoint, params=params, method=method)
         mapped_records = self.map_data(records=self.raw_data)
-        df = self.to_dataframe(mapped_records, source_name, endpoint)
+        df = self.to_dataframe(
+            records = mapped_records, 
+            source_name = source_name, 
+            source_path = endpoint
+        )
         
         return df
     

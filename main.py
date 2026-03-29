@@ -1,5 +1,5 @@
 
-
+import sys
 import yaml
 import argparse
 import logging
@@ -22,19 +22,21 @@ class Run:
         except Exception as e:
             self.logger.error(f"Job failed: {e}", exc_info=True)
             self._log_end(success=False)
+            sys.exit(1)
 
     def _extract(self, config: dict[str, any]):
         connector_module = self._get_module("connectors", config.get('connector_type'))
         dataframe = connector_module.Connector(
-            config.get("mapper"),
-            self.logger
+            mapper=config.get("mapper"),
+            logger=self.logger
         ).run(
             config=config
         )
         
-        self._write_to_datastore(dataframe=dataframe, config=self.config)
+        if len(dataframe.index) > 0:
+            self._write_to_datastore(dataframe=dataframe, config=self.config)
 
-        return len(dataframe)
+        return len(dataframe.index)
     
     def _write_to_datastore(
             self,
