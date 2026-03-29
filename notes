@@ -1,0 +1,4 @@
+
+
+    add: weather sleaford:
+        http://api.openweathermap.org/data/2.5/weather?id=2641324&appid=

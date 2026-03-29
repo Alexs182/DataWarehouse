@@ -17,10 +17,7 @@ class Connector(Common):
         self.logger = logging.getLogger(__name__)
         self.connection = connection
 
-        if mapper:
-            self.mapper = self.get_mapper(mapper, self.logger)
-        else:
-            self.mapper = None
+        self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
         
         self.server_url = f"{os.getenv(self.connection)}"
         if self.server_url == "None":
@@ -47,7 +44,7 @@ class Connector(Common):
 
 
     def _read_data(self, schema: str, table: str):
-        dataframe = list[dict{str, any}]
+        dataframe = None
 
         try:
             dataframe = pd.read_sql_table(

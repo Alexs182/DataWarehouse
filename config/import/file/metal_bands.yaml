@@ -1,0 +1,18 @@
+job_name: "metal_bands_ingestion"
+
+extract:
+  source_name: "metal-bands-file"
+  file_path: "/mnt/smb_share/alex/datastore/Misc/metal_bands.json"
+  file_type: "JSON"
+  read_type: "file"
+  mapper: "metal_bands"
+  connector_type: "file_connector"
+  execution_type: "read"
+
+target:
+  connector_type: "postgres_connector"
+  execution_type: "write"
+  connection: "data_warehouse"
+  schema: "staging"
+  table: "metal_bands"
+  write_mode: "append"
