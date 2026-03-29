@@ -20,9 +20,9 @@ class Common():
         
         return mapper
     
-    def map_data(self, records: List[Dict[str, any]]) -> List[Dict[str, any]]:
-            
-        return self.mapper(records)
+    def map_data(self, records: List[Dict[str, Any]] | None) -> List[Dict[str, Any]] | None:
+        if records:
+            return self.mapper(records)
 
     @staticmethod
     def apply_metadata(
