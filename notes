@@ -1,4 +1,17 @@
 
+Todo:
+    - Unit tests
+    - Mongo connector
+    - Integration tests
+    - Support for complex workflows
+    - operational db Support
+    - Grafana
+    - Superset? 
 
+Pipelines:
     add: weather sleaford:
         http://api.openweathermap.org/data/2.5/weather?id=2641324&appid=
+    dota
+    liquipedia
+    f1
+    football
