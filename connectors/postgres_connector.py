@@ -6,13 +6,17 @@ from typing import Optional, Dict, Any
 
 from dotenv import load_dotenv
 import pandas as pd
-import sqlalchemy
+from sqlalchemy import exc
 
 from connectors.common import Common
 
 class Connector(Common):
 
-    def __init__(self, connection: str, mapper: Optional[str] = None):
+    def __init__(self,      
+            connection: str,
+            logger: str, 
+            mapper: Optional[str] = None
+        ):
         load_dotenv()
         self.logger = logging.getLogger(__name__)
         self.connection = connection
@@ -39,12 +43,12 @@ class Connector(Common):
             )
         except pd.errors.DatabaseError as e:
             self.logger.error(f"Postgres Write error: {e}")
-        except sqlalchemy.exc.ArgumentError as e:
+        except exc.ArgumentError as e:
             self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
 
 
     def _read_data(self, schema: str, table: str):
-        dataframe = None
+        dataframe = pd.DataFrame([])
 
         try:
             dataframe = pd.read_sql_table(
@@ -57,7 +61,10 @@ class Connector(Common):
 
         
         if self.mapper:
-            dataframe = self.map_data(dataframe)
+            dataframe = self.map_data(
+                self.logger,
+                records=dataframe
+            )
 
         return dataframe
             

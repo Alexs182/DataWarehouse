@@ -28,42 +28,36 @@ class Common():
     def map_data(
             self, 
             logger,
-            records: List[Dict[str, Any]]
-        ) -> List[Dict[str, Any]] | None:
+            records: List[Dict[Any, Any]] | pd.DataFrame
+        ) -> List[Dict[Any, Any]] | pd.DataFrame:
 
-        if not records: 
+        if isinstance(records, list) and not records: 
             logger.warn("Mapping failed: No records to map")
-            return None
-        
+            return []
+        elif isinstance(records, pd.DataFrame) and len(records.index) == 0:
+            logger.warn("Mapping failed: No records to map")
+            return []
+
         if self.mapper:
             return self.mapper.map(records)
         
         logger.warn("Mapping failed: No mapper to complete mapping")
+        return []
 
     @staticmethod
     def apply_metadata(
-            records: List[Dict[str, Any]] | pd.DataFrame, 
+            records: pd.DataFrame, 
             source_name: str, 
             source_path: str
-        ) -> List[Dict[str, Any]] | pd.DataFrame:
+        ) -> pd.DataFrame:
 
         ingest_time = datetime.datetime.now()
         
-        # If the source is list of dicts
-        if isinstance(records, list):
-            for record in records: 
-                record['_ingestion_date'] = ingest_time.strftime("%Y-%m-%d")
-                record['_ingestion_timestamp'] = ingest_time.isoformat()
-                record['_source_name'] = source_name
-                record['_source_path'] = source_path
-                record['_raw_json'] = json.dumps(record.copy())
-        # If the source is a Dataframe.
-        else:
-            records['_ingestion_date'] = ingest_time.strftime("%Y-%m-%d")
-            records['_ingestion_timestamp'] = ingest_time.isoformat()
-            records['_source_name'] = source_name
-            records['_source_path'] = source_path
-            records['_raw_json'] = ""
+        records['_ingestion_date'] = ingest_time.strftime("%Y-%m-%d")
+        records['_ingestion_timestamp'] = ingest_time.isoformat()
+        records['_source_name'] = source_name
+        records['_source_path'] = source_path
+        records['_raw_json'] = ""
 
         return records
                 

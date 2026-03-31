@@ -9,9 +9,8 @@ extract:
   execution_type: "read"
 
 target:
-  connector_type: "postgres_connector"
+  file_path: "/mnt/smb_share/alex/datastore/Exports/iss_now.json"
+  file_type: "JSON"
+  mapper: Null
+  connector_type: "file_connector"
   execution_type: "write"
-  connection: "data_warehouse"
-  schema: "staging"
-  table: "iss_now"
-  write_mode: "append"
