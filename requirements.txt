@@ -6,3 +6,4 @@ dotenv==0.9.9
 astronomer-cosmos==1.13.1
 apache-airflow-providers-fab
 apache-airflow-providers-openlineage==1.8.0
+python-json-logger==4.1.0
