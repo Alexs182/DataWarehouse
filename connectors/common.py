@@ -21,11 +21,24 @@ class Common():
         except ModuleNotFoundError as e:
             logger.warn(f"No mapping module found for {map}. Trace: {e}")
         
+        self.mapper = mapper
+
         return mapper
     
-    def map_data(self, records: List[Dict[str, Any]] | None) -> List[Dict[str, Any]] | None:
-        if records:
-            return self.mapper(records)
+    def map_data(
+            self, 
+            logger,
+            records: List[Dict[str, Any]]
+        ) -> List[Dict[str, Any]] | None:
+
+        if not records: 
+            logger.warn("Mapping failed: No records to map")
+            return None
+        
+        if self.mapper:
+            return self.mapper.map(records)
+        
+        logger.warn("Mapping failed: No mapper to complete mapping")
 
     @staticmethod
     def apply_metadata(
