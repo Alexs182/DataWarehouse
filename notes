@@ -1,7 +1,11 @@
 
 Todo:
-    - implement dataframes everywhere rather than list[Dict]
-    - Make sure that the Common.MapData function is being used
+    X implement dataframes everywhere rather than list[Dict]
+    X Make sure that the Common.MapData function is being used
+    X Add execution attributes
+    X Add json logs
+    X Fix Type errors
+    X Add export functionality to backup key data
     - Setup ariflow runs for data ingestion
     - Unit tests
         X main

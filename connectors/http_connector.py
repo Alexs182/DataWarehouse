@@ -9,14 +9,15 @@ from connectors.common import Common
 
 class Connector(Common):
     def __init__(
-            self, 
+            self,
+            connection: str, 
             mapper: str,
             logger
         ):
         self.logger = logger
         self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
         
-        self.raw_data = None
+        self.raw_data: List[Dict[Any, Any]] = []
 
     def get_raw_response_data(self):
         return self.raw_data
@@ -33,14 +34,14 @@ class Connector(Common):
 
         self.logger.info(f"Raw Response Record count: {len(self.raw_data)}.")
 
-    def to_dataframe(self, records: List[Dict[Any, Any]], source_name: str, source_path: str):
+    def to_dataframe(self, records: List[Dict[Any, Any]], source_name: str, source_path: str) -> pd.DataFrame:
         if not records:
-            return pd.DataFrame.from_dict([])
+            return pd.DataFrame([])
         
-        records = self.apply_metadata(records, source_name, source_path)
-        df = pd.DataFrame.from_dict(records)
-
-        return df
+        dataframe = pd.DataFrame(records)
+        dataframe = self.apply_metadata(dataframe, source_name, source_path)
+        
+        return dataframe
 
     def _ingest(
             self,
@@ -57,11 +58,12 @@ class Connector(Common):
             records=self.raw_data
         )
 
-        df = self.to_dataframe(
-            records = mapped_records, 
-            source_name = source_name, 
-            source_path = endpoint
-        )
+        if isinstance(mapped_records, list):
+            df = self.to_dataframe(
+                records = mapped_records, 
+                source_name = source_name, 
+                source_path = endpoint
+            )
         
         return df
     

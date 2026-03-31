@@ -16,21 +16,18 @@ class Run:
 
     def execute(self):
         self._log_start(self.config)
-
         try:
             records = self._extract(config = self.config["extract"])
-
             self._log_end(success=True, records_processed=records)
-
         except Exception as e:
             self.logger.error(f"Job failed: {e}", exc_info=True)
             self._log_end(success=False)
-            sys.exit(1)
 
     def _extract(self, config: dict[str, Any]):
         connector_module = self._get_module("connectors", config.get('connector_type', ''))
         dataframe = connector_module.Connector(
             mapper=config.get("mapper"),
+            connection=config.get('connection'),
             logger=self.logger
         ).run(
             config=config
@@ -54,7 +51,8 @@ class Run:
 
         target_connector_module.Connector(
             mapper=target.get('mapper', ''), 
-            connection=target.get("connection", '')
+            connection=target.get("connection", ''),
+            logger=self.logger
         ).run(dataframe=dataframe, config=target)
 
         self._log_end(stage=f"DataStore write", success=True, records_processed=len(dataframe))
