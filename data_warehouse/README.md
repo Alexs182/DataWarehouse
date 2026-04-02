@@ -6,6 +6,13 @@ Try running the following commands:
 - dbt run
 - dbt test
 
+Sample pipeline
+
+Staging:
+    Bronze  - Flatten, depdupe
+    Silver  - Event latest  - Typed, cleansed, enriched
+            - Entity latest - only latest entity
+    Gold:   - Agged, simplified, BI ready
 
 ### Resources:
 - Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)

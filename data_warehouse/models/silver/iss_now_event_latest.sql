@@ -1,4 +1,9 @@
-{{ config(materialized='incremental', unique_key='entity_id') }}
+{{ 
+    config(
+        materialized='incremental', 
+        unique_key='event_id'
+    ) 
+}}
 
 WITH 
     BASE_DATA as (
@@ -34,7 +39,7 @@ WITH
         FROM (
             SELECT 
                 *,
-                ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY event_occurred_timestamp DESC) as seq
+                ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_occurred_timestamp DESC) as seq
             FROM BASE_DATA
         ) r
         WHERE r.seq = 1

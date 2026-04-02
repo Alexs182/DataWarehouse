@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental', 
-    unique_key='entity_id',
+    unique_key='event_id',
     meta={
         "elementary": {
         "timestamp_column": "event_occurred_timestamp" 
@@ -36,6 +36,7 @@ WITH
             r.event_occurred_timestamp,
             r.coin_name,
             r.coin_price,
+            r.market_cap,
             r.volume,
             r.change,
             r.last_updated,
@@ -45,7 +46,7 @@ WITH
         FROM (
             SELECT
                 *,
-                ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY event_occurred_timestamp DESC) as seq
+                ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_occurred_timestamp DESC) as seq
             FROM BASE_DATA
         ) r
         WHERE r.seq = 1
