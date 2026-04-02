@@ -1,9 +1,10 @@
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk.bases.hook import BaseHook
+from airflow.sdk import Variable
 from datetime import datetime
 
-
+ENV = Variable.get("environment")
 
 with DAG(
     dag_id="ingest_engine_hourly_dev",
@@ -17,9 +18,19 @@ with DAG(
         bash_command=(
             f"cd /opt/airflow/ingest_engine && python3 main.py "
             f"-c config/import/iss_now.yaml "
-            f"-e dev "
+            f"-e {ENV} "
             "2>&1"
         )
     )
 
-    iss_now
+    coingecko_simpleprice = BashOperator(
+        task_id="coingecko_simpleprice",
+        bash_command=(
+            f"cd /opt/airflow/ingest_engine && python3 main.py "
+            f"-c config/import/coingecko_simpleprice.yaml "
+            f"-e {ENV} "
+            "2>&1"
+        )
+    )
+
+    iss_now >> coingecko_simpleprice
