@@ -6,7 +6,10 @@ Todo:
     X Add json logs
     X Fix Type errors
     X Add export functionality to backup key data
-    - Setup ariflow runs for data ingestion
+    X Setup ariflow runs for data ingestion
+    - Run a full back up of dev + prod
+    - Take down the prod postgres to enable extend options
+    - Setup custom users to stop using admin
     - Unit tests
         X main
         - connectors
@@ -18,8 +21,10 @@ Todo:
     - Integration tests
     - Support for complex workflows
     - operational db Support
-    - Grafana
+    x Grafana
     - Superset? 
+        - Setup installation on server
+        - Build out some sample datasets / dashboards.
         - write a plan for implementing Superset
     - look at migrating to kubernetes for everything
     
