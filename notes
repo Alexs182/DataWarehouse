@@ -28,6 +28,13 @@ Todo:
         - write a plan for implementing Superset
     - look at migrating to kubernetes for everything
         - add K9s to local machine for easier monitoring
+    - Finish the "Staged" workflow system
+        - finalise config section of the mapper
+        - build the operational datastore using the config
+        - don't forget to remove any previous stages of the pipeline execution from the pipeline map_output
+        - test everything.
+    - Fix the cron schedule on the ingestion
+    - Investigate the duplication issue.
     
 
 Pipelines:
@@ -45,7 +52,5 @@ release plan:
     X rebuild docker container
     X add environment env var to prod
     X drop the crontabs
-
-    - check Grafana is still picking up the logs
-
+    X check Grafana is still picking up the logs
     - remove silver tables from prod

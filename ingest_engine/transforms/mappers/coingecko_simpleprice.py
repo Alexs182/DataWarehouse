@@ -1,3 +1,7 @@
+from typing import Any
+
+import pandas as pd
+
 from transforms.mappers.map_assist import MapAssist
 
 class Mapper(MapAssist):
@@ -24,3 +28,11 @@ class Mapper(MapAssist):
             })
 
         return self.map_output
+    
+    def config(
+            self,
+            dataframe: pd.DataFrame,
+            pipeline_config: dict[str, Any]
+        ):
+
+        pass

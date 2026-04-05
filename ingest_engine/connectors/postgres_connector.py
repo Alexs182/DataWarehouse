@@ -18,7 +18,7 @@ class Connector(Common):
             mapper: Optional[str] = None
         ):
         load_dotenv()
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.connection = connection
 
         self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
@@ -68,25 +68,54 @@ class Connector(Common):
 
         return dataframe
             
+    def _update_config(
+            self,
+            dataframe: pd.DataFrame,
+            pipeline_config: Dict[str, Any]
+        ):
 
-    def run(self, config: Dict[str, Any], dataframe = None):
-        match config.get("execution_type", "").lower():
+        pipeline_config = self.rebuild_config(
+            logger=self.logger,
+            pipeline_config=pipeline_config,
+            dataframe=dataframe
+        )
+
+        return pipeline_config
+
+
+    def run(self, 
+            pipeline_config: Dict[str, Any], 
+            stage_config: Dict[str, Any],
+            dataframe: pd.DataFrame
+        ):
+        match stage_config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
-                    config.get("schema", ""),
-                    config.get("table", "")
+                    stage_config.get("schema", ""),
+                    stage_config.get("table", "")
                 )
-                return dataframe
             case "write":
                 self._write_data(
                     dataframe,
-                    config.get("write_mode", ""),
-                    config.get("schema", ""),
-                    config.get("table", "")
+                    stage_config.get("write_mode", ""),
+                    stage_config.get("schema", ""),
+                    stage_config.get("table", "")
                 )
+            
+            case "bypass":
+                pass
+
             case _:
                 self.logger.error("No valid postgres execution_type in configuration.")
                 raise ValueError("Invalid execution type for Postgres connector, should be either read or write.")
 
-        return None       
+        if stage_config.get("stage_type") == "config":
+            pipeline_config = self._update_config(
+                dataframe,
+                pipeline_config
+            )
+
+
+
+        return dataframe, pipeline_config       
     
