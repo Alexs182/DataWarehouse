@@ -27,6 +27,7 @@ Todo:
         - Build out some sample datasets / dashboards.
         - write a plan for implementing Superset
     - look at migrating to kubernetes for everything
+        - add K9s to local machine for easier monitoring
     
 
 Pipelines:
@@ -37,3 +38,14 @@ Pipelines:
     f1
     football
     stocks
+
+
+release plan:
+    X move to the release rather than main
+    X rebuild docker container
+    X add environment env var to prod
+    X drop the crontabs
+
+    - check Grafana is still picking up the logs
+
+    - remove silver tables from prod
