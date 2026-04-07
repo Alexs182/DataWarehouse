@@ -68,24 +68,9 @@ class Connector(Common):
 
         return dataframe
             
-    def _update_config(
-            self,
-            dataframe: pd.DataFrame,
-            pipeline_config: Dict[str, Any]
-        ):
-
-        pipeline_config = self.rebuild_config(
-            logger=self.logger,
-            pipeline_config=pipeline_config,
-            dataframe=dataframe
-        )
-
-        return pipeline_config
-
-
     def run(self, 
-            pipeline_config: Dict[str, Any], 
-            stage_config: Dict[str, Any],
+            pipeline_config, 
+            stage_config,
             dataframe: pd.DataFrame
         ):
         match stage_config.get("execution_type", "").lower():
@@ -110,12 +95,12 @@ class Connector(Common):
                 raise ValueError("Invalid execution type for Postgres connector, should be either read or write.")
 
         if stage_config.get("stage_type") == "config":
-            pipeline_config = self._update_config(
-                dataframe,
-                pipeline_config
+            pipeline_config = self.rebuild_config(
+                dataframe=dataframe,
+                pipeline_config=pipeline_config,
+                stage_config=stage_config,
+                logger=self.logger
             )
-
-
 
         return dataframe, pipeline_config       
     

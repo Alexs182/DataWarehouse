@@ -35,4 +35,4 @@ class Mapper(MapAssist):
             pipeline_config: dict[str, Any]
         ):
 
-        pass
+        return pipeline_config

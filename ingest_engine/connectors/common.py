@@ -47,15 +47,18 @@ class Common():
     def rebuild_config(
             self,
             logger,
-            pipeline_config: Dict[str, Any],
+            pipeline_config,
+            stage_config,
             dataframe: pd.DataFrame   
         ):
 
         if self.mapper:
-            return self.mapper.config(dataframe, pipeline_config)
+            pipeline_config = self.mapper.config(dataframe, pipeline_config)
         
-        logger.warn("Config update failed: No mapper to complete update")
-        return 
+        index = stage_config.get('index') + 1
+        pipeline_config['stages'] = pipeline_config['stages'][index:]
+
+        return pipeline_config
 
     @staticmethod
     def apply_metadata(

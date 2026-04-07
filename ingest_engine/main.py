@@ -1,6 +1,7 @@
 
 import sys
 import yaml
+import copy
 import argparse
 import logging
 import importlib
@@ -20,10 +21,15 @@ class Run:
         self._log_start(self.pipeline_config)
 
     def execute(self):
-        for stage in self.pipeline_config['stages']:
-            try: 
+        for stage_index, stage in enumerate(self.pipeline_config['stages']):
+            try:
+                logger.info(f'Starting Stage: {stage_index}')
+                logger.info(f"Stage Config: {stage}") 
+
+                stage['index'] = stage_index
+
                 config = self._execute_stage(
-                    pipeline_config=self.pipeline_config,
+                    pipeline_config=copy.deepcopy(self.pipeline_config),
                     stage_config=stage
                 )
 
@@ -47,7 +53,6 @@ class Run:
             stage_config
         ) -> dict[str, Any]:
 
-        logger.info(f"Stage Config: {stage_config}")
         connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
         dataframe, config = connector_module.Connector(
             mapper=stage_config.get("mapper"),
@@ -61,41 +66,6 @@ class Run:
 
         self.dataframe = dataframe
         return config
-
-
-    def _extract(self, config: dict[str, Any]):
-        connector_module = self._get_module("connectors", config.get('connector_type', ''))
-        dataframe = connector_module.Connector(
-            mapper=config.get("mapper"),
-            connection=config.get('connection'),
-            logger=self.logger
-        ).run(
-            config=config
-        )
-        
-        if len(dataframe.index) > 0:
-            self._write_to_datastore(dataframe=dataframe, config=self.config)
-
-        return len(dataframe.index)
-    
-    def _write_to_datastore(
-            self,
-            dataframe,
-            config: dict[str, Any]
-        ):
-
-        self._log_start(stage=f"DataStore write", config=config)
-
-        target = config.get('target', '')
-        target_connector_module = self._get_module("connectors", target.get('connector_type', ''))
-
-        target_connector_module.Connector(
-            mapper=target.get('mapper', ''), 
-            connection=target.get("connection", ''),
-            logger=self.logger
-        ).run(dataframe=dataframe, config=target)
-
-        self._log_end(stage=f"DataStore write", success=True, records_processed=len(dataframe))
 
     @staticmethod
     def _get_module(module_source: str, module_type: str):

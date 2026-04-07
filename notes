@@ -23,6 +23,7 @@ Todo:
         - add an id to each execution for easier log travsel 
         X update the existing configs to meet new spec
         - Look at logging to figure out if any changes are necessary
+        - logging override
 
     Extensions:
         - Support for complex workflows
