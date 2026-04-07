@@ -124,4 +124,12 @@ class Connector(Common):
                 self.logger.error("No valid postgres execution_type in configuration.")
                 raise ValueError("Invalid execution type for File connector, should be either read or write.")
             
-        return dataframe, pipeline_config 
+        if stage_config.get("stage_type") == "config":
+            pipeline_config = self.rebuild_config(
+                dataframe=dataframe,
+                pipeline_config=pipeline_config,
+                stage_config=stage_config,
+                logger=self.logger
+            )
+
+        return dataframe, pipeline_config

@@ -79,5 +79,13 @@ class Connector(Common):
             params=stage_config.get('params', ''),
             source_name=stage_config.get('source_name', '')
         )
+        
+        if stage_config.get("stage_type") == "config":
+            pipeline_config = self.rebuild_config(
+                dataframe=dataframe,
+                pipeline_config=pipeline_config,
+                stage_config=stage_config,
+                logger=self.logger
+            )
 
-        return dataframe, pipeline_config 
+        return dataframe, pipeline_config       

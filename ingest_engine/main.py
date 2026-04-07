@@ -2,6 +2,7 @@
 import sys
 import yaml
 import copy
+import uuid
 import argparse
 import logging
 import importlib
@@ -20,13 +21,18 @@ class Run:
 
         self._log_start(self.pipeline_config)
 
+        self.execution_index = 0
+
     def execute(self):
+        self.execution_index += 1
+
         for stage_index, stage in enumerate(self.pipeline_config['stages']):
             try:
-                logger.info(f'Starting Stage: {stage_index}')
+                logger.info(f'Starting Stage: {stage_index} on exexcution index: {self.execution_index}')
                 logger.info(f"Stage Config: {stage}") 
 
                 stage['index'] = stage_index
+                stage['execution_index'] = self.execution_index
 
                 config = self._execute_stage(
                     pipeline_config=copy.deepcopy(self.pipeline_config),
@@ -124,7 +130,8 @@ def setup_logs(
         datefmt='%Y-%m-%d %H:%M:%S',
         static_fields={
             "job_name": job_name,
-            "environment": environment
+            "environment": environment,
+            "execution_id": str(uuid.uuid4())
         }
     )
     handler.setFormatter(formatter)
