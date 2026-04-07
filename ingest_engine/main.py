@@ -7,21 +7,61 @@ import importlib
 from typing import Any
 
 from pythonjsonlogger.json import JsonFormatter
+import pandas as pd
 
 class Run:
     def __init__(self, config):
-        self.config = config
+        self.pipeline_config = config
         self.logger = logging.getLogger(__name__)
-        self.job_name = self.config['job_name']
+        self.job_name = self.pipeline_config['job_name']
+
+        self.dataframe = pd.DataFrame()
+
+        self._log_start(self.pipeline_config)
 
     def execute(self):
-        self._log_start(self.config)
-        try:
-            records = self._extract(config = self.config["extract"])
-            self._log_end(success=True, records_processed=records)
-        except Exception as e:
-            self.logger.error(f"Job failed: {e}", exc_info=True)
-            self._log_end(success=False)
+        for stage in self.pipeline_config['stages']:
+            try: 
+                config = self._execute_stage(
+                    pipeline_config=self.pipeline_config,
+                    stage_config=stage
+                )
+
+                if self.pipeline_config != config:
+                    self.logger.info("Pipeline Config changed by process, executing subsequent stages.")
+                    self.logger.info(f"New Config: {config}")
+
+                    self.pipeline_config = config
+                    self.execute()
+                    break
+
+            except Exception as e:
+                self.logger.error(f"Job failed: {e}", exc_info=True)
+                self._log_end(success=False)
+        
+        self._log_end(success=True)
+
+    def _execute_stage(
+            self, 
+            pipeline_config,
+            stage_config
+        ) -> dict[str, Any]:
+
+        logger.info(f"Stage Config: {stage_config}")
+        connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
+        dataframe, config = connector_module.Connector(
+            mapper=stage_config.get("mapper"),
+            connection=stage_config.get('connection'),
+            logger=self.logger
+        ).run(
+            pipeline_config=pipeline_config,
+            stage_config=stage_config,
+            dataframe=self.dataframe
+        )
+
+        self.dataframe = dataframe
+        return config
+
 
     def _extract(self, config: dict[str, Any]):
         connector_module = self._get_module("connectors", config.get('connector_type', ''))
@@ -69,7 +109,7 @@ class Run:
             self.logger.debug(f"Config: {config}")
         else:
             self.logger.info(f"Starting job: {self.job_name}")
-            self.logger.debug(f"Config: {self.config}")
+            self.logger.debug(f"Config: {self.pipeline_config}")
 
     def _log_end(self, success: bool, records_processed: int = 0, stage = None):
         status = "Success" if success else "Failed"

@@ -1,41 +1,52 @@
 
 Todo:
-    X implement dataframes everywhere rather than list[Dict]
-    X Make sure that the Common.MapData function is being used
-    X Add execution attributes
-    X Add json logs
-    X Fix Type errors
-    X Add export functionality to backup key data
-    X Setup ariflow runs for data ingestion
-    - Run a full back up of dev + prod
-    - Take down the prod postgres to enable extend options
-    - Setup custom users to stop using admin
-    - Unit tests
-        X main
-        - connectors
-            - file_connector
-            - http_connector
-            - postgres_connector
-            - mongo_connector
-    - Mongo connector
-    - Integration tests
-    - Support for complex workflows
-    - operational db Support
-    x Grafana
-    - Superset? 
-        - Setup installation on server
-        - Build out some sample datasets / dashboards.
-        - write a plan for implementing Superset
-    - look at migrating to kubernetes for everything
-        - add K9s to local machine for easier monitoring
-    - Finish the "Staged" workflow system
-        - finalise config section of the mapper
-        - build the operational datastore using the config
-        - don't forget to remove any previous stages of the pipeline execution from the pipeline map_output
-        - test everything.
-    - Fix the cron schedule on the ingestion
-    - Investigate the duplication issue.
-    
+    Tooling:
+        x Grafana
+        - Superset? 
+            - Setup installation on server
+            - Build out some sample datasets / dashboards.
+            - write a plan for implementing Superset
+        - Investigate the duplication issue.
+        - look at migrating to kubernetes for everything
+            - add K9s to local machine for easier monitoring
+
+    Database:
+        - Run a full back up of dev + prod
+        - Take down the prod postgres to enable extend options
+        - Setup custom users to stop using admin
+        - remove silver tables from prod
+        - Clean up dev + prod
+
+
+    Code changes:
+        - Fix the cron schedule on the ingestion
+        - add an id to each execution for easier log travsel 
+        X update the existing configs to meet new spec
+        - Look at logging to figure out if any changes are necessary
+
+    Extensions:
+        - Support for complex workflows
+        - operational db Support
+        - Mongo connector
+        - Finish the "Staged" workflow system
+            - finalise config section of the mapper
+            - build the operational datastore using the config
+            - don't forget to remove any previous stages of the pipeline execution from the pipeline map_output
+            - test everything.
+
+    Testing:
+        - Unit tests
+            X main
+            - connectors
+                - file_connector
+                - http_connector
+                - postgres_connector
+                - mongo_connector
+        - Integration tests
+
+    Documentation:
+        - Interface spec for each connector
+            - needs to cover the relevant config for the connector
 
 Pipelines:
     add: weather sleaford:
@@ -47,10 +58,13 @@ Pipelines:
     stocks
 
 
-release plan:
-    X move to the release rather than main
-    X rebuild docker container
-    X add environment env var to prod
-    X drop the crontabs
-    X check Grafana is still picking up the logs
-    - remove silver tables from prod
+    
+
+:: DONE :: 
+    X implement dataframes everywhere rather than list[Dict]
+    X Make sure that the Common.MapData function is being used
+    X Add execution attributes
+    X Add json logs
+    X Fix Type errors
+    X Add export functionality to backup key data
+    X Setup ariflow runs for data ingestion

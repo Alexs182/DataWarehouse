@@ -1,0 +1,32 @@
+job_name: "iss_now_export"
+
+stages:
+  # export iss_now
+  - stage_type: "data"
+    table: "iss_now"
+    schema: "staging"
+    connection: "data_warehouse"
+    mapper: Null
+    connector_type: "postgres_connector"
+    execution_type: "read"
+  - stage_type: "data"
+    file_path: "/mnt/smb_share/alex/datastore/Exports/iss_now.json"
+    file_type: "JSON"
+    mapper: Null
+    connector_type: "file_connector"
+    execution_type: "write"
+
+  # coingecko_simpleprice
+  - stage_type: "data"
+    table: "coingecko_simpleprice"
+    schema: "staging"
+    connection: "data_warehouse"
+    mapper: Null
+    connector_type: "postgres_connector"
+    execution_type: "read"
+  - stage_type: "data"
+    file_path: "/mnt/smb_share/alex/datastore/Exports/coingecko_simpleprice.json"
+    file_type: "JSON"
+    mapper: Null
+    connector_type: "file_connector"
+    execution_type: "write"
