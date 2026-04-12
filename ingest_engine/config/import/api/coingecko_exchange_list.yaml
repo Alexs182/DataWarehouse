@@ -1,0 +1,20 @@
+job_name: "coingecko_exchange_list_ingestion"
+
+stages:
+  - stage_type: "data"
+    connector_type: "http_connector"
+    mapper: "coingecko_exchange_list"
+    source_name: "coingecko"
+    endpoint: "https://api.coingecko.com/api/v3/exchanges/list"
+    method: "GET"
+    params: {
+      status: "active"
+    }
+
+  - stage_type: "data"
+    connector_type: "postgres_connector"
+    execution_type: "write"
+    connection: "data_warehouse"
+    schema: "staging"
+    table: "coingecko_exchange_list"
+    write_mode: "append"

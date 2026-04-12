@@ -1,0 +1,35 @@
+job_name: "coingecko_simpleprice_ingestion"
+
+stages:
+  - stage_type: "config"
+    connector_type: "postgres_connector"
+    execution_type: "read"
+    mapper: "coingecko_simpleprice"
+    table: "coins"
+    schema: "operational"
+    connection: "data_warehouse"
+    
+  - stage_type: "data"
+    connector_type: "http_connector"
+    mapper: "coingecko_simpleprice"
+    source_name: "coingecko"
+    endpoint: "https://api.coingecko.com/api/v3/simple/price"
+    method: "GET"
+    params: {
+      vs_currencies: "gbp",
+      ids: "bitcoin,ethereum,litecoin,cardano,polkadot,bitcoin-cash,stellar,chainlink,binancecoin,tether,monero",
+      include_market_cap: "true",
+      include_24hr_vol: "true",
+      include_24hr_change: "true",
+      include_last_updated_at: "true"
+    }
+
+  - stage_type: "data"
+    connector_type: "postgres_connector"
+    execution_type: "write"
+    connection: "data_warehouse"
+    schema: "staging"
+    table: "coingecko_simpleprice"
+    write_mode: "append"
+  
+  

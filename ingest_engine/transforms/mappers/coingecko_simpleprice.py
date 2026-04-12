@@ -1,3 +1,7 @@
+from typing import Any
+
+import pandas as pd
+
 from transforms.mappers.map_assist import MapAssist
 
 class Mapper(MapAssist):
@@ -24,3 +28,14 @@ class Mapper(MapAssist):
             })
 
         return self.map_output
+    
+    def config(
+            self,
+            dataframe: pd.DataFrame,
+            pipeline_config: dict[str, Any]
+        ):
+
+        coin_list = dataframe['coin_name'].to_list()
+        pipeline_config['stages'][1]['params']['ids'] = ",".join(coin_list)
+
+        return pipeline_config

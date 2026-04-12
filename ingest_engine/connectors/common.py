@@ -44,6 +44,22 @@ class Common():
         logger.warn("Mapping failed: No mapper to complete mapping")
         return []
 
+    def rebuild_config(
+            self,
+            logger,
+            pipeline_config,
+            stage_config,
+            dataframe: pd.DataFrame   
+        ):
+
+        if self.mapper:
+            pipeline_config = self.mapper.config(dataframe, pipeline_config)
+        
+        index = stage_config.get('index') + 1
+        pipeline_config['stages'] = pipeline_config['stages'][index:]
+
+        return pipeline_config
+
     @staticmethod
     def apply_metadata(
             records: pd.DataFrame, 

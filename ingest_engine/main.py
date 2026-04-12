@@ -1,61 +1,77 @@
 
 import sys
 import yaml
+import copy
+import uuid
 import argparse
 import logging
 import importlib
 from typing import Any
 
 from pythonjsonlogger.json import JsonFormatter
+import pandas as pd
 
 class Run:
     def __init__(self, config):
-        self.config = config
+        self.pipeline_config = config
         self.logger = logging.getLogger(__name__)
-        self.job_name = self.config['job_name']
+        self.job_name = self.pipeline_config['job_name']
+
+        self.dataframe = pd.DataFrame()
+
+        self._log_start(self.pipeline_config)
+
+        self.execution_index = 0
 
     def execute(self):
-        self._log_start(self.config)
-        try:
-            records = self._extract(config = self.config["extract"])
-            self._log_end(success=True, records_processed=records)
-        except Exception as e:
-            self.logger.error(f"Job failed: {e}", exc_info=True)
-            self._log_end(success=False)
+        self.execution_index += 1
 
-    def _extract(self, config: dict[str, Any]):
-        connector_module = self._get_module("connectors", config.get('connector_type', ''))
-        dataframe = connector_module.Connector(
-            mapper=config.get("mapper"),
-            connection=config.get('connection'),
+        for stage_index, stage in enumerate(self.pipeline_config['stages']):
+            try:
+                logger.info(f'Starting Stage: {stage_index} on exexcution index: {self.execution_index}')
+                logger.info(f"Stage Config: {stage}") 
+
+                stage['index'] = stage_index
+                stage['execution_index'] = self.execution_index
+
+                config = self._execute_stage(
+                    pipeline_config=copy.deepcopy(self.pipeline_config),
+                    stage_config=stage
+                )
+
+                if self.pipeline_config != config:
+                    self.logger.info("Pipeline Config changed by process, executing subsequent stages.")
+                    self.logger.info(f"New Config: {config}")
+
+                    self.pipeline_config = config
+                    self.execute()
+                    break
+
+            except Exception as e:
+                self.logger.error(f"Job failed: {e}", exc_info=True)
+                self._log_end(success=False)
+        
+        self._log_end(success=True)
+
+    def _execute_stage(
+            self, 
+            pipeline_config,
+            stage_config
+        ) -> dict[str, Any]:
+
+        connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
+        dataframe, config = connector_module.Connector(
+            mapper=stage_config.get("mapper"),
+            connection=stage_config.get('connection'),
             logger=self.logger
         ).run(
-            config=config
+            pipeline_config=pipeline_config,
+            stage_config=stage_config,
+            dataframe=self.dataframe
         )
-        
-        if len(dataframe.index) > 0:
-            self._write_to_datastore(dataframe=dataframe, config=self.config)
 
-        return len(dataframe.index)
-    
-    def _write_to_datastore(
-            self,
-            dataframe,
-            config: dict[str, Any]
-        ):
-
-        self._log_start(stage=f"DataStore write", config=config)
-
-        target = config.get('target', '')
-        target_connector_module = self._get_module("connectors", target.get('connector_type', ''))
-
-        target_connector_module.Connector(
-            mapper=target.get('mapper', ''), 
-            connection=target.get("connection", ''),
-            logger=self.logger
-        ).run(dataframe=dataframe, config=target)
-
-        self._log_end(stage=f"DataStore write", success=True, records_processed=len(dataframe))
+        self.dataframe = dataframe
+        return config
 
     @staticmethod
     def _get_module(module_source: str, module_type: str):
@@ -69,7 +85,7 @@ class Run:
             self.logger.debug(f"Config: {config}")
         else:
             self.logger.info(f"Starting job: {self.job_name}")
-            self.logger.debug(f"Config: {self.config}")
+            self.logger.debug(f"Config: {self.pipeline_config}")
 
     def _log_end(self, success: bool, records_processed: int = 0, stage = None):
         status = "Success" if success else "Failed"
@@ -114,7 +130,8 @@ def setup_logs(
         datefmt='%Y-%m-%d %H:%M:%S',
         static_fields={
             "job_name": job_name,
-            "environment": environment
+            "environment": environment,
+            "execution_id": str(uuid.uuid4())
         }
     )
     handler.setFormatter(formatter)

@@ -100,19 +100,23 @@ class Connector(Common):
             self.logger.error(f"Error writing file: {file_name}. Error: {e}")
 
 
-    def run(self, config: Dict[str, Any], dataframe = pd.DataFrame()):
-        match config.get("execution_type", "").lower():
+    def run(self, 
+            pipeline_config: Dict[str, Any],
+            stage_config: Dict[str, Any], 
+            dataframe: pd.DataFrame
+        ):
+        match stage_config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
-                    file_path=config.get('file_path', ''),
-                    file_type=config.get('file_type', ''),
-                    read_type=config.get('read_type', ''),
-                    source_name=config.get("source_name", '')
+                    file_path=stage_config.get('file_path', ''),
+                    file_type=stage_config.get('file_type', ''),
+                    read_type=stage_config.get('read_type', ''),
+                    source_name=stage_config.get("source_name", '')
                 )
             case "write":
                 self._write_file(
-                    file_name=config.get('file_path', ''),
-                    file_type=config.get('file_type', ''),
+                    file_name=stage_config.get('file_path', ''),
+                    file_type=stage_config.get('file_type', ''),
                     dataframe=dataframe
                 )
             
@@ -120,4 +124,12 @@ class Connector(Common):
                 self.logger.error("No valid postgres execution_type in configuration.")
                 raise ValueError("Invalid execution type for File connector, should be either read or write.")
             
-        return dataframe
+        if stage_config.get("stage_type") == "config":
+            pipeline_config = self.rebuild_config(
+                dataframe=dataframe,
+                pipeline_config=pipeline_config,
+                stage_config=stage_config,
+                logger=self.logger
+            )
+
+        return dataframe, pipeline_config

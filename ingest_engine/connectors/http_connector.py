@@ -67,13 +67,25 @@ class Connector(Common):
         
         return df
     
-    def run(self, config: Dict[str, Any]):
+    def run(self, 
+            pipeline_config: Dict[str, Any],
+            stage_config: Dict[str, Any],
+            dataframe: pd.DataFrame
+        ):
 
         dataframe = self._ingest(
-            endpoint=config.get('endpoint', ''),
-            method=config.get('method', ''),
-            params=config.get('params', ''),
-            source_name=config.get('source_name', '')
+            endpoint=stage_config.get('endpoint', ''),
+            method=stage_config.get('method', ''),
+            params=stage_config.get('params', ''),
+            source_name=stage_config.get('source_name', '')
         )
+        
+        if stage_config.get("stage_type") == "config":
+            pipeline_config = self.rebuild_config(
+                dataframe=dataframe,
+                pipeline_config=pipeline_config,
+                stage_config=stage_config,
+                logger=self.logger
+            )
 
-        return dataframe
+        return dataframe, pipeline_config       
