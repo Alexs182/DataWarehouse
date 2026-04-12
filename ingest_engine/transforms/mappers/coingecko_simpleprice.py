@@ -35,4 +35,7 @@ class Mapper(MapAssist):
             pipeline_config: dict[str, Any]
         ):
 
+        coin_list = dataframe['coin_name'].to_list()
+        pipeline_config['stages'][1]['params']['ids'] = ",".join(coin_list)
+
         return pipeline_config

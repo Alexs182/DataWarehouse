@@ -22,18 +22,18 @@ Todo:
         - Fix the cron schedule on the ingestion
         x add an id to each execution for easier log travsel 
         X update the existing configs to meet new spec
-        - Look at logging to figure out if any changes are necessary
-        - logging override
+        x Look at logging to figure out if any changes are necessary
+        x logging override
 
     Extensions:
         x Support for complex workflows
         x operational db Support
         - Mongo connector
-        - Finish the "Staged" workflow system
+        x Finish the "Staged" workflow system
             x finalise config section of the mapper
-            - build the operational datastore using the config
+            x build the operational datastore using the config
             x don't forget to remove any previous stages of the pipeline execution from the pipeline map_output
-            - test everything.
+            x test everything.
 
     Testing:
         - Unit tests

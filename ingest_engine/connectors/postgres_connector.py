@@ -14,7 +14,7 @@ class Connector(Common):
 
     def __init__(self,      
             connection: str,
-            logger: str, 
+            logger, 
             mapper: Optional[str] = None
         ):
         load_dotenv()
@@ -47,8 +47,8 @@ class Connector(Common):
             self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
 
 
-    def _read_data(self, schema: str, table: str):
-        dataframe = pd.DataFrame([])
+    def _read_data(self, schema: str, table: str, stage_type: str) -> pd.DataFrame:
+        dataframe = pd.DataFrame()
 
         try:
             dataframe = pd.read_sql_table(
@@ -59,12 +59,15 @@ class Connector(Common):
         except Exception as e:
             self.logger.error(f"{e}")
 
-        
-        if self.mapper:
-            dataframe = self.map_data(
-                self.logger,
-                records=dataframe
-            )
+        # only map data if this is a data type workflow
+        # data to be used by the config should just return 
+        # what is necessary
+        if stage_type.lower() == "data":
+            if self.mapper:
+                dataframe = self.map_data(
+                    self.logger,
+                    records=dataframe
+                )
 
         return dataframe
             
@@ -76,8 +79,9 @@ class Connector(Common):
         match stage_config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
-                    stage_config.get("schema", ""),
-                    stage_config.get("table", "")
+                    schema=stage_config.get("schema", ""),
+                    table=stage_config.get("table", ""),
+                    stage_type=stage_config.get("stage_type", "")
                 )
             case "write":
                 self._write_data(
