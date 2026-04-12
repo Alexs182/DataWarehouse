@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="remote_dev" uuid="ece5bbf7-b9cf-43b1-b9a1-2e37a641bf46">
+    <data-source source="LOCAL" name="remote_dev" uuid="fce284d4-6d51-4609-b513-c7736604cf38">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://192.168.1.164:42451/postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://192.168.1.164:42451/dev</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="remote_prod" uuid="43d4400a-ac86-4ea1-83f9-28625273a39e">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://192.168.1.164:42451/prod</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
