@@ -9,7 +9,7 @@ ENV = Variable.get("environment")
 with DAG(
     dag_id="ingest_engine_hourly",
     start_date=datetime(2024, 1, 1),
-    schedule="0 0 * * *",
+    schedule="0 * * * *",
     catchup=False,
 ) as dag:
 

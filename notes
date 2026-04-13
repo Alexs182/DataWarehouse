@@ -14,12 +14,12 @@ Todo:
         - Run a full back up of dev + prod
         - Take down the prod postgres to enable extend options
         - Setup custom users to stop using admin
-        - remove silver tables from prod
-        - Clean up dev + prod
+        X remove silver tables from prod
+        X Clean up dev + prod
 
 
     Code changes:
-        - Fix the cron schedule on the ingestion
+        X Fix the cron schedule on the ingestion
         x add an id to each execution for easier log travsel 
         X update the existing configs to meet new spec
         x Look at logging to figure out if any changes are necessary
