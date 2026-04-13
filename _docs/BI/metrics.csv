@@ -1,0 +1,7 @@
+Pipeline,Metric,Calculation
+coingecko,Current Price
+coingecko,24hr change
+coingecko, weekly performance
+coingecko, Year on Year
+coingecko, most improved
+coingecko, most volitile
