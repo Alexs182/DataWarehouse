@@ -84,6 +84,7 @@ class Connector(Common):
                     stage_type=stage_config.get("stage_type", "")
                 )
             case "write":
+                self.logger.info("Starting data write")
                 self._write_data(
                     dataframe,
                     stage_config.get("write_mode", ""),

@@ -17,7 +17,7 @@ with DAG(
         task_id="iss_now",
         bash_command=(
             f"cd /opt/airflow/ingest_engine && python3 main.py "
-            f"-c config/import/iss_now.yaml "
+            f"-c config/import/api/iss_now.yaml "
             f"-e {ENV} "
             "2>&1"
         )
@@ -27,7 +27,7 @@ with DAG(
         task_id="coingecko_simpleprice",
         bash_command=(
             f"cd /opt/airflow/ingest_engine && python3 main.py "
-            f"-c config/import/coingecko_simpleprice.yaml "
+            f"-c config/import/api/coingecko_simpleprice.yaml "
             f"-e {ENV} "
             "2>&1"
         )
