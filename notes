@@ -1,7 +1,6 @@
 
 Todo:
-    Tooling:
-        x Grafana
+    Tooling:        
         - Superset? 
             - Setup installation on server
             - Build out some sample datasets / dashboards.
@@ -14,26 +13,12 @@ Todo:
         - Run a full back up of dev + prod
         - Take down the prod postgres to enable extend options
         - Setup custom users to stop using admin
-        X remove silver tables from prod
-        X Clean up dev + prod
-
 
     Code changes:
-        X Fix the cron schedule on the ingestion
-        x add an id to each execution for easier log travsel 
-        X update the existing configs to meet new spec
-        x Look at logging to figure out if any changes are necessary
-        x logging override
 
     Extensions:
-        x Support for complex workflows
-        x operational db Support
         - Mongo connector
-        x Finish the "Staged" workflow system
-            x finalise config section of the mapper
-            x build the operational datastore using the config
-            x don't forget to remove any previous stages of the pipeline execution from the pipeline map_output
-            x test everything.
+
 
     Testing:
         - Unit tests
@@ -46,6 +31,8 @@ Todo:
         - Integration tests
 
     Documentation:
+        - create docs folder
+            - Add spec's / information on each pipeline
         - Interface spec for each connector
             - needs to cover the relevant config for the connector
 
@@ -69,3 +56,14 @@ Pipelines:
     X Fix Type errors
     X Add export functionality to backup key data
     X Setup ariflow runs for data ingestion
+    x Finish the "Staged" workflow system
+    X Fix the cron schedule on the ingestion
+    x add an id to each execution for easier log travsel 
+    X update the existing configs to meet new spec
+    x Look at logging to figure out if any changes are necessary
+    x logging override
+    x Support for complex workflows
+    x operational db Support
+    X remove silver tables from prod
+    X Clean up dev + prod
+    x Grafana
