@@ -7,17 +7,28 @@ import json
 import argparse
 import logging
 
+import pandas as pd
+
 from connectors.http_connector import Connector
 
-def execute_api_request(config, logger):
-    mapper = config["extract"]["mapper"] 
+def execute_api_request(config, logger, stage_offset):
+    stage = config['stages'][stage_offset]
+    mapper = stage['mapper'] 
     if mapper:
         if mapper == "":
             mapper = None
 
 
-    obj = Connector(mapper, logger)
-    dataframe = obj.run(config=config["extract"])
+    obj = Connector(
+        connection="",
+        mapper=mapper,
+        logger=logger
+    )
+    dataframe = obj.run(
+        pipeline_config={},
+        stage_config=stage,
+        dataframe=pd.DataFrame
+    )
 
     raw_response = obj.get_raw_response_data()
 
@@ -39,11 +50,12 @@ def get_config(config_file: str):
 
 def main(args, logger):
     config = get_config(args.config)
+    stage_offset = args.stage_offset
 
     print("CONFIG:")
     print(json.dumps(config, indent=4))
 
-    execute_api_request(config, logger)
+    execute_api_request(config, logger, stage_offset)
 
 
 def setup_logs():
@@ -65,6 +77,7 @@ def add_args():
     )
 
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to config file")
+    parser.add_argument("-s", "--stage_offset", type=int, required=True, help="The offset of the stage to test")
 
     args = parser.parse_args()
 
