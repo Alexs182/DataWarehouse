@@ -5,9 +5,11 @@ Todo:
             - Setup installation on server
             - Build out some sample datasets / dashboards.
             - write a plan for implementing Superset
-        - Investigate the duplication issue.
         - look at migrating to kubernetes for everything
             - add K9s to local machine for easier monitoring
+            x Grafana
+            x Superset
+            - Airflow
 
     Database:
         - Run a full back up of dev + prod
@@ -18,7 +20,12 @@ Todo:
 
     Extensions:
         - Mongo connector
+        - Webscrape module
 
+    Grafana:
+        - Ingest the dag logs as well
+        - Setup dashboard for UFW etc.
+        - Prometheus? to monitor the pods etc.
 
     Testing:
         - Unit tests
@@ -67,3 +74,4 @@ Pipelines:
     X remove silver tables from prod
     X Clean up dev + prod
     x Grafana
+    x Investigate the duplication issue.

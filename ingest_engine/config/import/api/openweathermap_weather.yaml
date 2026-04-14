@@ -1,0 +1,16 @@
+job_name: "openweathermap_weather"
+
+stages:
+  - stage_type: "data"
+    connector_type: "http_connector"
+    mapper: "openweathermap_weather"
+    source_name: "openweathermap"
+    endpoint: "http://api.openweathermap.org/data/2.5/weather"
+    method: "GET"
+    params: {
+      id: 2641324,
+      appid: "ENVsecret"
+    }
+    secrets: {
+      appid: "openweathermap_key"
+    }

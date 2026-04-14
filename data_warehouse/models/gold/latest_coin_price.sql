@@ -2,16 +2,17 @@
     materialized='table'
 ) }}
 
+WITH 
+    base_data as (
+        SELECT 
+            coin_name,
+            coin_price,
+            market_cap,
+            volume,
+            change,
+            last_updated
+        FROM {{ ref('coingecko_simpleprice_entity_latest')}}
+    )
 
-SELECT * 
-FROM (
-    SELECT 
-        coin_name,
-        coin_price,
-        market_cap,
-        volume,
-        last_updated,
-        ROW_NUMBER() OVER (PARTITION BY coin_name ORDER BY last_updated) as row_num
-    FROM {{ ref('coingecko_simpleprice_entity_latest')}}
-)
-WHERE row_num = 1
+SELECT *
+FROM base_data
