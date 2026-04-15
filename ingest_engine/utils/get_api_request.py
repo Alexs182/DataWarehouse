@@ -27,7 +27,7 @@ def execute_api_request(config, logger, stage_offset):
     dataframe = obj.run(
         pipeline_config={},
         stage_config=stage,
-        dataframe=pd.DataFrame
+        dataframe=pd.DataFrame()
     )
 
     raw_response = obj.get_raw_response_data()
@@ -37,6 +37,10 @@ def execute_api_request(config, logger, stage_offset):
 
     print("MAPPED DATA:")
     print(dataframe)
+
+    print("ENTIITY:")
+    entity = dataframe[0].to_json()
+    print(entity)
 
 
 def get_config(config_file: str):
@@ -87,3 +91,5 @@ if __name__ == "__main__":
     args = add_args()
     logger = setup_logs()
     main(args, logger)
+
+# python3 get_api_request.py -c ../config/import/api/openweathermap_weather.yaml -s 0
