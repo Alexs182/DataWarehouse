@@ -12,8 +12,8 @@ import pandas as pd
 from connectors.http_connector import Connector
 
 def execute_api_request(config, logger, stage_offset):
-    stage = config['stages'][stage_offset]
-    mapper = stage['mapper'] 
+    stage = config.get('stages')[stage_offset]
+    mapper = stage.get('mapper', '') 
     if mapper:
         if mapper == "":
             mapper = None

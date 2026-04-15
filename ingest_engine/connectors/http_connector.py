@@ -1,5 +1,6 @@
 
 import os
+import copy
 from typing import Dict, List, Optional, Any
 
 from dotenv import load_dotenv
@@ -26,9 +27,7 @@ class Connector(Common):
         return self.raw_data
     
     def _inject_secret_values(self, key: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        print(key)
-        key_name = self.stage_config.get("secrets").get(key)
-        print(key_name)
+        key_name = self.stage_config.get("secrets", {}).get(key)
         secret_key = os.getenv(key_name)
         if secret_key == "None":
             self.logger.error(f'Secret: {key} not found in environment variables, check .env file and config.')
@@ -36,11 +35,9 @@ class Connector(Common):
 
         params[key] = secret_key
 
-        print(params)
-
         return params
 
-    def fetch(self, endpoint: str, params: Dict[str, Any] | None, method: str):
+    def fetch(self, endpoint: str, params: Dict[str, Any], method: str):
         
         secret_keys = [k for k, v in params.items() if v == "ENVsecret"]
         for key in secret_keys:
@@ -70,7 +67,7 @@ class Connector(Common):
             endpoint: str,
             source_name: str,
             method: str,
-            params: Optional[Dict[str, Any]] = {}
+            params: Dict[str, Any]
         ):
             
         self.fetch(endpoint=endpoint, params=params, method=method)
@@ -95,12 +92,12 @@ class Connector(Common):
             dataframe: pd.DataFrame
         ):
 
-        self.stage_config = stage_config
+        self.stage_config = copy.deepcopy(stage_config)
 
         dataframe = self._ingest(
             endpoint=stage_config.get('endpoint', ''),
             method=stage_config.get('method', ''),
-            params=stage_config.get('params', ''),
+            params=stage_config.get('params', {}),
             source_name=stage_config.get('source_name', '')
         )
         

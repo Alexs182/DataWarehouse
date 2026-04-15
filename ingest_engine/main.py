@@ -39,7 +39,8 @@ class Run:
                     stage_config=stage
                 )
 
-                if self.pipeline_config != config:
+                # Dont allow more that 5 executions, great way to ddos a service and get banned
+                if self.pipeline_config != config and self.execution_index > 5:
                     self.logger.info("Pipeline Config changed by process, executing subsequent stages.")
                     self.logger.info(f"New Config: {config}")
 

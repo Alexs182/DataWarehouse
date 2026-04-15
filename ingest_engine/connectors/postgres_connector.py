@@ -76,6 +76,7 @@ class Connector(Common):
             stage_config,
             dataframe: pd.DataFrame
         ):
+
         match stage_config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
@@ -106,6 +107,8 @@ class Connector(Common):
                 stage_config=stage_config,
                 logger=self.logger
             )
+
+        print(pipeline_config)
 
         return dataframe, pipeline_config       
     
