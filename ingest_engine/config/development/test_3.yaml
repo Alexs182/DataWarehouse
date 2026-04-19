@@ -1,0 +1,24 @@
+job_name: "iss_now_export"
+
+stages:
+  - module_type: "connector"
+    stage_type: "data"
+    table: "iss_now"
+    schema: "staging"
+    connection: "data_warehouse"
+    mapper: Null
+    connector_type: "postgres_connector"
+    execution_type: "read"
+    schema: 
+      active: True
+      
+
+  - module_type: "transform"
+    stage_type: "data"
+    transform_type: "schema_transform"
+    table: "iss_now"
+    schema: "staging"
+    connection: "data_warehouse"
+    mapper: Null
+    connector_type: "postgres_connector"
+    execution_type: "read"

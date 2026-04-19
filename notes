@@ -30,6 +30,7 @@ Todo:
         - Ingest the dag logs as well
         - Setup dashboard for UFW etc.
         - Prometheus? to monitor the pods etc.
+        - Add variables to dashboard to allow for filtering logs on actual failures.
 
     Testing:
         - Unit tests

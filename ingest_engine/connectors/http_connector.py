@@ -72,6 +72,15 @@ class Connector(Common):
             
         self.fetch(endpoint=endpoint, params=params, method=method)
 
+
+        # entry point for schema derivation
+        if self.stage_config.get('schema', {}).get('active'):
+            self.get_schema(
+                logger=self.logger,
+                records=self.raw_data
+            )
+
+
         mapped_records = self.map_data(
             logger=self.logger, 
             records=self.raw_data
