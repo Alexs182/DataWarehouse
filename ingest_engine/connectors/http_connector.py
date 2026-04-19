@@ -39,9 +39,14 @@ class Connector(Common):
 
     def fetch(self, endpoint: str, params: Dict[str, Any], method: str):
         
+        # Param secrets, this is apparently unsafe and uncommon but required for some
+        # of the Endpoints used in this project.
         secret_keys = [k for k, v in params.items() if v == "ENVsecret"]
         for key in secret_keys:
             params = self._inject_secret_values(key, params)
+
+        # To add: same thing but for the headers. Its much more common to need to provide
+        # secret values to the headers. Need to add this when required
 
         try: 
             response = requests.get(f"{endpoint}", params=params)
@@ -73,14 +78,16 @@ class Connector(Common):
         self.fetch(endpoint=endpoint, params=params, method=method)
 
 
-        # entry point for schema derivation
-        if self.stage_config.get('schema', {}).get('active'):
+        # entry point for raw schema derivation
+        if self.stage_config.get('data_schema', {}).get('active'):
             self.get_schema(
+                schema_type="raw_schema",
                 logger=self.logger,
-                records=self.raw_data
+                records=self.raw_data,
+                pipeline_name=self.pipeline_config.get('job_name', '')
             )
 
-
+        # entry point for the mapper
         mapped_records = self.map_data(
             logger=self.logger, 
             records=self.raw_data
@@ -93,6 +100,15 @@ class Connector(Common):
                 source_path = endpoint
             )
         
+        # entry point for mapped schema derivation
+        if self.stage_config.get('data_schema', {}).get('active'):
+            self.get_schema(
+                schema_type="mapped_schema",
+                logger=self.logger,
+                records=df,
+                pipeline_name=self.pipeline_config.get('job_name', '')
+            )
+
         return df
     
     def run(self, 
@@ -100,7 +116,7 @@ class Connector(Common):
             stage_config: Dict[str, Any],
             dataframe: pd.DataFrame
         ):
-
+        self.pipeline_config = copy.deepcopy(pipeline_config)
         self.stage_config = copy.deepcopy(stage_config)
 
         dataframe = self._ingest(

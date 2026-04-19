@@ -9,7 +9,7 @@ stages:
     mapper: Null
     connector_type: "postgres_connector"
     execution_type: "read"
-    schema: 
+    data_schema: 
       active: True
       
 

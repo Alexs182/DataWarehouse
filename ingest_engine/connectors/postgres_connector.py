@@ -30,7 +30,8 @@ class Connector(Common):
 
     def _write_data(self, dataframe, write_mode: str, schema: str, table: str):
 
-        dataframe['entity'] = dataframe['entity'].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x )
+        if 'entity' in dataframe.columns:
+            dataframe['entity'] = dataframe['entity'].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x )
 
         try:
             dataframe.to_sql(

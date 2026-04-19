@@ -29,13 +29,17 @@ class Common():
     def get_schema(
             self,
             logger,
+            schema_type: str,
+            pipeline_name: str,
             records: List[Dict[str, Any]] | pd.DataFrame
         ):
 
         Transform(
             logger=logger
-        ).run(
-            
+        ).run(  
+            data=records,
+            schema_type=schema_type,
+            pipeline_name=pipeline_name
         )
 
 
