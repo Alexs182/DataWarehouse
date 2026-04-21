@@ -1,7 +1,8 @@
 job_name: "coingecko_simpleprice_ingestion"
 
 sql:
-  pipeline_name: iss_now_ingestion
+  pipeline_name: "iss_now_ingestion"
+  template_prefix: "iss_now"
 
   templates: 
     - bronze
