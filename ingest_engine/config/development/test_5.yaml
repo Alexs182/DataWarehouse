@@ -1,5 +1,13 @@
 job_name: "coingecko_simpleprice_ingestion"
 
+sql:
+  pipeline_name: iss_now_ingestion
+
+  templates: 
+    - bronze
+    - silver_event_latest
+    - silver_entity_latest
+
 stages:
   - stage_type: "data"
     connector_type: "http_connector"
