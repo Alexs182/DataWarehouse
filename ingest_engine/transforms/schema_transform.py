@@ -30,13 +30,24 @@ class Transform():
         self.logger = logger
 
     def _get_schema_list(self, data: List[Dict[str, Any]]):
-        builder = SchemaBuilder()
-        builder.add_object(data)
-        raw = builder.to_schema()
 
-        schema = raw.get('properties', {})
+        if isinstance(data, dict):
+            data = [data]
 
-        return schema
+        schemas = []
+
+        for item in data:
+            builder = SchemaBuilder()
+            builder.add_object(item)
+            raw = builder.to_schema()
+            schemas.append(raw.get('properties', {}))
+
+        flattened_schema = {}
+        for schema in schemas:
+            flattened_schema = dict(flattened_schema, **schema)
+
+        print(flattened_schema)
+        return flattened_schema
 
     def _get_schema_dataframe(self, dataframe: pd.DataFrame) -> Dict[str, Any]:
         schema = {
