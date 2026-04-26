@@ -6,7 +6,10 @@ import yaml
 import argparse
 from pathlib import Path
 
+import pandas as pd 
 from jinja2 import Environment, FileSystemLoader
+
+from connectors.postgres_connector import Connector 
 
 class TemplateWriter:
     def __init__(self, template_root):
@@ -34,9 +37,16 @@ class TemplateWriter:
         folder_name = "/".join(filename_array[:len(filename_array)-1])
         Path(folder_name).mkdir(parents=True, exist_ok=True)
 
+    def get_schema(self, pipeline_name: str):
+        schema = Schema(pipeline_name=pipeline_name).run()
+
+        return schema
+
     def run(self, config):
         pipeline_name = config.get('pipeline_name', "")
         template_prefix = config.get("template_prefix", "")
+        
+        schema = self.get_schema(pipeline_name=pipeline_name) 
 
         for template in config.get('templates', []):
             content = self.generate_template(
@@ -46,7 +56,51 @@ class TemplateWriter:
             filename = f'{self.template_folder}/generated/{pipeline_name}/{template_prefix}_{template}.sql'
             self.write_content_to_file(filename, content)
 
+class Schema:
+    def __init__(self, pipeline_name: str):
+        self.pipeline_name = pipeline_name
+        self.sql = f"""
+            select s.schema
+            FROM (
+                select 
+                    schema, 
+                    row_number() over (PARTITION BY pipeline_name ORDER BY insert_datetime) as rowNum
+                from operational.schemas
+                WHERE pipeline_name = '{pipeline_name}'
+                AND schema_type = 'mapped_schema'
+            ) as s
+            WHERE s.rowNum = 1;
+        """
 
+    def _get_schema(self):
+        stage_config = {
+            "stage_type": "data",
+            "connector_type": "postgres_connector",
+            "execution_type": "read",
+            "connection": "data_warehouse",
+            "schema": "operational",
+            "table": "schemas",
+            "sql": self.sql
+        }
+
+        dataframe, _ = Connector(
+            connection="data_warehouse",
+            logger=None,
+            mapper=None 
+        ).run(
+            pipeline_config=[],
+            stage_config=stage_config,
+            dataframe=pd.DataFrame 
+        )
+
+        return dataframe
+
+    def run(self):
+        dataframe = self._get_schema()
+
+        print(dataframe)
+        
+        return dataframe
 
 def main(args):
     config = get_config(args.config)

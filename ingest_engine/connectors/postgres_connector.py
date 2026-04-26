@@ -48,15 +48,28 @@ class Connector(Common):
             self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
 
 
-    def _read_data(self, schema: str, table: str, stage_type: str) -> pd.DataFrame:
+    def _read_data(
+            self, 
+            schema: str, 
+            table: str, 
+            stage_type: str,
+            sql: str 
+        ) -> pd.DataFrame:
         dataframe = pd.DataFrame()
 
         try:
-            dataframe = pd.read_sql_table(
-                con=self.server_url,
-                table_name=table,
-                schema=schema
-            )
+            if sql != "":
+                dataframe = pd.read_sql_query(
+                    con=self.server_url,
+                    sql=sql 
+                )
+            else:
+                dataframe = pd.read_sql_table(
+                    con=self.server_url,
+                    table_name=table,
+                    schema=schema
+                )
+
         except Exception as e:
             self.logger.error(f"{e}")
 
@@ -83,7 +96,8 @@ class Connector(Common):
                 dataframe = self._read_data(
                     schema=stage_config.get("schema", ""),
                     table=stage_config.get("table", ""),
-                    stage_type=stage_config.get("stage_type", "")
+                    stage_type=stage_config.get("stage_type", ""),
+                    sql=stage_config.get("sql", "")
                 )
             case "write":
                 self.logger.info("Starting data write")
