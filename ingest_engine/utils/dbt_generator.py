@@ -3,6 +3,7 @@ sys.path.insert(0, '..')
 
 import os
 import yaml
+import json
 import argparse
 from pathlib import Path
 
@@ -46,7 +47,10 @@ class TemplateWriter:
         pipeline_name = config.get('pipeline_name', "")
         template_prefix = config.get("template_prefix", "")
         
-        schema = self.get_schema(pipeline_name=pipeline_name) 
+        schema = self.get_schema(pipeline_name=pipeline_name)
+
+        self.params['table_name'] = template_prefix
+        self.params['fields'] = schema
 
         for template in config.get('templates', []):
             content = self.generate_template(
@@ -94,13 +98,21 @@ class Schema:
         )
 
         return dataframe
+    
+    def _parse_dataframe(self, dataframe: pd.DataFrame) -> list:
 
-    def run(self):
+        full_schema = json.loads(dataframe['schema'].iloc[0])
+        entity_schema = full_schema['entity']['properties']
+        print(entity_schema)
+
+        return entity_schema
+
+
+    def run(self) -> list:
         dataframe = self._get_schema()
-
-        print(dataframe)
+        schema = self._parse_dataframe(dataframe)
         
-        return dataframe
+        return schema
 
 def main(args):
     config = get_config(args.config)
