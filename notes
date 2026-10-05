@@ -2,8 +2,8 @@
 Todo:
     Tooling:        
         - Superset? 
-            - Setup installation on server
-            - Build out some sample datasets / dashboards.
+            X Setup installation on server
+            X Build out some sample datasets / dashboards.
             - write a plan for implementing Superset
         - look at migrating to kubernetes for everything
             - add K9s to local machine for easier monitoring
@@ -17,6 +17,20 @@ Todo:
         - Setup custom users to stop using admin
 
     Code changes:
+        - operational workflows
+            - a set of workflows to add / update operational workflows  
+                - coins for coinggecko
+                - locations for weather data
+        - Add the schema system
+          - Pull in the schema automatically
+          - Store it in the operational section of the datawarehouse
+          - Build out the templating engine to enable automated DBT templates
+          - Design the workflow for this
+          - Update the existing pipelines to include the SQL and schema sections
+          - Build out the other templates (silver)
+          - Review all of the code to ensure its safe, covered by tests and makes sense
+          - make sure it respects the active flag
+          - Implement it across the other connectors
 
     Extensions:
         - Mongo connector
@@ -26,6 +40,7 @@ Todo:
         - Ingest the dag logs as well
         - Setup dashboard for UFW etc.
         - Prometheus? to monitor the pods etc.
+        - Add variables to dashboard to allow for filtering logs on actual failures.
 
     Testing:
         - Unit tests
@@ -44,14 +59,19 @@ Todo:
             - needs to cover the relevant config for the connector
 
 Pipelines:
-    add: weather sleaford:
-        http://api.openweathermap.org/data/2.5/weather?id=2641324&appid=
+    x add: weather sleaford :- http://api.openweathermap.org/data/2.5/weather?id=2641324&appid=
     dota
     liquipedia
     f1
     football
-    stocks
+    stocks - https://marketstack.com/signup
 
+    malware
+    CVE's
+
+    reference data:
+        uk address?
+        companies house
 
     
 

@@ -1,0 +1,12 @@
+job_name: "iss_now_ingestion"
+
+stages:
+  - stage_type: "data"
+    connector_type: "http_connector"
+    mapper: "iss_now"
+    source_name: "open-notify"
+    endpoint: "http://api.open-notify.org/iss-now.json"
+    method: "GET"
+    params: {}
+    data_schema:
+      active: True

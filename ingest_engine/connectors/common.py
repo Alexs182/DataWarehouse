@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 
 import pandas as pd
 
+from transforms.schema_transform import Transform
 
 class Common():
     def __init__(self):
@@ -25,6 +26,24 @@ class Common():
 
         return mapper
     
+    def get_schema(
+            self,
+            logger,
+            schema_type: str,
+            pipeline_name: str,
+            records: List[Dict[str, Any]] | pd.DataFrame
+        ):
+
+        Transform(
+            logger=logger
+        ).run(  
+            data=records,
+            schema_type=schema_type,
+            pipeline_name=pipeline_name
+        )
+
+
+
     def map_data(
             self, 
             logger,

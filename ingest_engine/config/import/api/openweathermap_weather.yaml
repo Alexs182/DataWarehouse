@@ -14,3 +14,11 @@ stages:
     secrets: {
       appid: "openweathermap_key"
     }
+
+  - stage_type: "data"
+    connector_type: "postgres_connector"
+    execution_type: "write"
+    connection: "data_warehouse"
+    schema: "staging"
+    table: "openweathermap_weather"
+    write_mode: "append"

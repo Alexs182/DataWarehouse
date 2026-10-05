@@ -39,7 +39,8 @@ class Run:
                     stage_config=stage
                 )
 
-                if self.pipeline_config != config:
+                # Dont allow more that 5 executions, great way to ddos a service and get banned
+                if self.pipeline_config != config and self.execution_index > 5:
                     self.logger.info("Pipeline Config changed by process, executing subsequent stages.")
                     self.logger.info(f"New Config: {config}")
 
@@ -59,16 +60,33 @@ class Run:
             stage_config
         ) -> dict[str, Any]:
 
-        connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
-        dataframe, config = connector_module.Connector(
-            mapper=stage_config.get("mapper"),
-            connection=stage_config.get('connection'),
-            logger=self.logger
-        ).run(
-            pipeline_config=pipeline_config,
-            stage_config=stage_config,
-            dataframe=self.dataframe
-        )
+        mod_type = stage_config.get('module_type', 'connector')
+
+        match mod_type:
+            case "connector":
+                connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
+                dataframe, config = connector_module.Connector(
+                    mapper=stage_config.get("mapper"),
+                    connection=stage_config.get('connection'),
+                    logger=self.logger
+                ).run(
+                    pipeline_config=pipeline_config,
+                    stage_config=stage_config,
+                    dataframe=self.dataframe
+                )
+            case "transform":
+                transform_module = self._get_module("transforms", stage_config.get('transform_type', ''))
+                dataframe, config = transform_module.Transform(
+                    mapper=stage_config.get("mapper"),
+                    logger=self.logger
+                ).run(
+                    pipeline_config=pipeline_config,
+                    stage_config=stage_config,
+                    dataframe=self.dataframe           
+                )
+            case _:
+                self.logger.error("No valid stage type in configuration.")
+                raise ValueError("Invalid stage type for main, should be either transform or connector.")
 
         self.dataframe = dataframe
         return config
