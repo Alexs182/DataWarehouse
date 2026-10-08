@@ -1,6 +1,7 @@
 config/airflow.cfg
 *.dbtvenv
 
+ingest_engine/tmp/*
 logs/*
 
 # Byte-compiled / optimized / DLL files

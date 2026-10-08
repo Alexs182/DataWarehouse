@@ -11,12 +11,7 @@ from requests.exceptions import HTTPError
 from connectors.common import Common
 
 class Connector(Common):
-    def __init__(
-            self,
-            connection: str, 
-            mapper: str,
-            logger
-        ):
+    def __init__(self, connection: str, mapper: str, logger):
         load_dotenv()
         self.logger = logger
         self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
@@ -27,7 +22,7 @@ class Connector(Common):
         return self.raw_data
     
     def _inject_secret_values(self, key: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        key_name = self.stage_config.get("secrets", {}).get(key)
+        key_name = self.config.get("secrets", {}).get(key)
         secret_key = os.getenv(key_name)
         if secret_key == "None":
             self.logger.error(f'Secret: {key} not found in environment variables, check .env file and config.')
@@ -67,24 +62,17 @@ class Connector(Common):
         
         return dataframe
 
-    def _ingest(
-            self,
-            endpoint: str,
-            source_name: str,
-            method: str,
-            params: Dict[str, Any]
-        ):
+    def _ingest(self, endpoint: str, source_name: str, method: str, params: Dict[str, Any]):
             
         self.fetch(endpoint=endpoint, params=params, method=method)
 
-
         # entry point for raw schema derivation
-        if self.stage_config.get('data_schema', {}).get('active'):
+        if self.config.get('data_schema', {}).get('active'):
             self.get_schema(
                 schema_type="raw_schema",
                 logger=self.logger,
                 records=self.raw_data,
-                pipeline_name=self.pipeline_config.get('job_name', '')
+                pipeline_name=self.config.get('job_name', '')
             )
 
         # entry point for the mapper
@@ -101,37 +89,24 @@ class Connector(Common):
             )
         
         # entry point for mapped schema derivation
-        if self.stage_config.get('data_schema', {}).get('active'):
+        if self.config.get('data_schema', {}).get('active'):
             self.get_schema(
                 schema_type="mapped_schema",
                 logger=self.logger,
                 records=df,
-                pipeline_name=self.pipeline_config.get('job_name', '')
+                pipeline_name=self.config.get('job_name', '')
             )
 
         return df
     
-    def run(self, 
-            pipeline_config: Dict[str, Any],
-            stage_config: Dict[str, Any],
-            dataframe: pd.DataFrame
-        ):
-        self.pipeline_config = copy.deepcopy(pipeline_config)
-        self.stage_config = copy.deepcopy(stage_config)
+    def run(self, config: Dict[str, Any], dataframe: pd.DataFrame):
+        self.config = copy.deepcopy(config)
 
         dataframe = self._ingest(
-            endpoint=stage_config.get('endpoint', ''),
-            method=stage_config.get('method', ''),
-            params=stage_config.get('params', {}),
-            source_name=stage_config.get('source_name', '')
+            endpoint=config.get('endpoint', ''),
+            method=config.get('method', ''),
+            params=config.get('params', {}),
+            source_name=config.get('source_name', '')
         )
-        
-        if stage_config.get("stage_type") == "config":
-            pipeline_config = self.rebuild_config(
-                dataframe=dataframe,
-                pipeline_config=pipeline_config,
-                stage_config=stage_config,
-                logger=self.logger
-            )
 
-        return dataframe, pipeline_config       
+        return dataframe       

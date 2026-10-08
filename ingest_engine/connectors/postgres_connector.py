@@ -12,11 +12,7 @@ from connectors.common import Common
 
 class Connector(Common):
 
-    def __init__(self,      
-            connection: str,
-            logger, 
-            mapper: Optional[str] = None
-        ):
+    def __init__(self, connection: str, logger, mapper: Optional[str] = None):
         load_dotenv()
         self.logger = logger
         self.connection = connection
@@ -48,21 +44,12 @@ class Connector(Common):
             self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
 
 
-    def _read_data(
-            self, 
-            schema: str, 
-            table: str, 
-            stage_type: str,
-            sql: str 
-        ) -> pd.DataFrame:
+    def _read_data(self, schema: str, table: str, stage_type: str, sql: str) -> pd.DataFrame:
         dataframe = pd.DataFrame()
 
         try:
             if sql != "":
-                dataframe = pd.read_sql_query(
-                    con=self.server_url,
-                    sql=sql 
-                )
+                dataframe = pd.read_sql_query(con=self.server_url, sql=sql)
             else:
                 dataframe = pd.read_sql_table(
                     con=self.server_url,
@@ -85,27 +72,25 @@ class Connector(Common):
 
         return dataframe
             
-    def run(self, 
-            pipeline_config, 
-            stage_config,
-            dataframe: pd.DataFrame
-        ):
+    def run(self, config, dataframe: pd.DataFrame):
+        schema = config.get("schema", "")
+        table = config.get("table", "")
 
-        match stage_config.get("execution_type", "").lower():
+        match config.get("execution_type", "").lower():
             case "read":
                 dataframe = self._read_data(
-                    schema=stage_config.get("schema", ""),
-                    table=stage_config.get("table", ""),
-                    stage_type=stage_config.get("stage_type", ""),
-                    sql=stage_config.get("sql", "")
+                    schema=schema,
+                    table=table,
+                    stage_type=config.get("stage_type", ""),
+                    sql=config.get("sql", "")
                 )
             case "write":
                 self.logger.info("Starting data write")
                 self._write_data(
-                    dataframe,
-                    stage_config.get("write_mode", ""),
-                    stage_config.get("schema", ""),
-                    stage_config.get("table", "")
+                    dataframe=dataframe,
+                    write_mode=config.get("write_mode", ""),
+                    schema=schema,
+                    table=table
                 )
             
             case "bypass":
@@ -115,15 +100,5 @@ class Connector(Common):
                 self.logger.error("No valid postgres execution_type in configuration.")
                 raise ValueError("Invalid execution type for Postgres connector, should be either read or write.")
 
-        if stage_config.get("stage_type") == "config":
-            pipeline_config = self.rebuild_config(
-                dataframe=dataframe,
-                pipeline_config=pipeline_config,
-                stage_config=stage_config,
-                logger=self.logger
-            )
-
-        print(pipeline_config)
-
-        return dataframe, pipeline_config       
+        return dataframe       
     

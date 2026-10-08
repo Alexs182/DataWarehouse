@@ -44,11 +44,7 @@ class Common():
 
 
 
-    def map_data(
-            self, 
-            logger,
-            records: List[Dict[Any, Any]] | pd.DataFrame
-        ) -> List[Dict[Any, Any]] | pd.DataFrame:
+    def map_data(self, logger, records: List[Dict[Any, Any]] | pd.DataFrame) -> List[Dict[Any, Any]] | pd.DataFrame:
 
         if isinstance(records, list) and not records: 
             logger.warn("Mapping failed: No records to map")

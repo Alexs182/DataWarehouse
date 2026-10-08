@@ -1,3 +1,6 @@
+source -> transform -> mongo 
+mongo -> tranform -> postgres 
+
 
 Todo:
     Tooling:        

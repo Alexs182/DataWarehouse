@@ -11,11 +11,15 @@ from typing import Any
 from pythonjsonlogger.json import JsonFormatter
 import pandas as pd
 
+from connectors.common import Common
+
 class Run:
-    def __init__(self, config):
+    def __init__(self, config, stage_type: str, dry_run: str):
         self.pipeline_config = config
+        self.dry_run = dry_run
         self.logger = logging.getLogger(__name__)
         self.job_name = self.pipeline_config['job_name']
+        self.stage_type = stage_type
 
         self.dataframe = pd.DataFrame()
 
@@ -24,72 +28,64 @@ class Run:
         self.execution_index = 0
 
     def execute(self):
-        self.execution_index += 1
+        config = self.pipeline_config[self.stage_type]
 
-        for stage_index, stage in enumerate(self.pipeline_config['stages']):
-            try:
-                logger.info(f'Starting Stage: {stage_index} on exexcution index: {self.execution_index}')
-                logger.info(f"Stage Config: {stage}") 
+        try:
+            logger.info(f'Starting Execution: {self.stage_type} of pipeline {self.job_name}')
 
-                stage['index'] = stage_index
-                stage['execution_index'] = self.execution_index
+            config = self._execute_stage(
+                config=copy.deepcopy(config),
+                stage_type=self.stage_type
+            )
 
-                config = self._execute_stage(
-                    pipeline_config=copy.deepcopy(self.pipeline_config),
-                    stage_config=stage
-                )
-
-                # Dont allow more that 5 executions, great way to ddos a service and get banned
-                if self.pipeline_config != config and self.execution_index > 5:
-                    self.logger.info("Pipeline Config changed by process, executing subsequent stages.")
-                    self.logger.info(f"New Config: {config}")
-
-                    self.pipeline_config = config
-                    self.execute()
-                    break
-
-            except Exception as e:
-                self.logger.error(f"Job failed: {e}", exc_info=True)
-                self._log_end(success=False)
+        except Exception as e:
+            self.logger.error(f"Job failed: {e}", exc_info=True)
+            self._log_end(success=False)
         
         self._log_end(success=True)
 
-    def _execute_stage(
-            self, 
-            pipeline_config,
-            stage_config
-        ) -> dict[str, Any]:
+    def _execute_stage(self, config, stage_type: str) -> dict[str, Any]:
 
-        mod_type = stage_config.get('module_type', 'connector')
-
-        match mod_type:
-            case "connector":
-                connector_module = self._get_module("connectors", stage_config.get('connector_type', ''))
-                dataframe, config = connector_module.Connector(
-                    mapper=stage_config.get("mapper"),
-                    connection=stage_config.get('connection'),
+        match stage_type:
+            case "extract":
+                # Load the connector module
+                connector_module = self._get_module("connectors", config.get('connector_type', ''))
+                # Execute the loader process
+                self.dataframe = connector_module.Connector(
+                    mapper=config.get("mapper"),
+                    connection=config.get('connection'),
                     logger=self.logger
                 ).run(
-                    pipeline_config=pipeline_config,
-                    stage_config=stage_config,
+                    config=config,
                     dataframe=self.dataframe
                 )
-            case "transform":
-                transform_module = self._get_module("transforms", stage_config.get('transform_type', ''))
-                dataframe, config = transform_module.Transform(
-                    mapper=stage_config.get("mapper"),
-                    logger=self.logger
-                ).run(
-                    pipeline_config=pipeline_config,
-                    stage_config=stage_config,
-                    dataframe=self.dataframe           
-                )
+
+                if not dry_run:
+                    # Load the mongo module
+                    mongo_module = self._get_module("connectors", "mongo_connector")
+                    # Execute the mongo load
+                    _ = mongo_module.Connector(config=config.get("mongodb"), logger=self.logger).write(dataframe=self.dataframe)
+                else:
+                    self._dry_run()
+                    print(self.dataframe)
+
+            case "load":
+                print("test")
             case _:
                 self.logger.error("No valid stage type in configuration.")
-                raise ValueError("Invalid stage type for main, should be either transform or connector.")
+                raise ValueError("Invalid stage type for main, should be either extract or load")
 
-        self.dataframe = dataframe
         return config
+
+    def _dry_run(self):
+
+
+        match self.dry_run:
+            case "d":
+                print(self.dataframe)
+
+            case "df":
+                self.dataframe.to_json()
 
     @staticmethod
     def _get_module(module_source: str, module_type: str):
@@ -115,9 +111,9 @@ class Run:
     
         self.logger.info(f"Records processed: {records_processed}")
 
-def run_job(config_file: str, logger):
+def run_job(config_file: str, logger, stage: str, dry_run: str):
     config = get_config(config_file, logger)
-    Run(config).execute() 
+    Run(config, stage, dry_run).execute() 
 
 
 def get_config(config_file: str, logger):
@@ -130,11 +126,7 @@ def get_config(config_file: str, logger):
         logger.error(f"Unable to open file: {config_file}")
         raise Exception("Missing config for execution")
 
-def setup_logs(
-        loglevel: str, 
-        job_name: str, 
-        environment: str
-    ):
+def setup_logs(loglevel: str, job_name: str, environment: str):
 
     logname = f"logs/ingest_engine_logs.log"
 
@@ -184,8 +176,11 @@ def add_args():
     )
 
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to config file")
-    parser.add_argument("-l", "--loglevel", type=str, help="Level for the logs, default Info")
     parser.add_argument('-e', "--environment", type=str, required=True, help="Environment the run is targeting")
+    parser.add_argument("-s", "--stage", type=str, required=True, help="Config stage name")
+
+    parser.add_argument("-d", "--dryrun", type=str, required=False, help="Dry Run option, d = on screen, df = dry run file")
+    parser.add_argument("-l", "--loglevel", type=str, help="Level for the logs, default Info")
 
     args = parser.parse_args()
 
@@ -195,5 +190,7 @@ def add_args():
 if __name__ == "__main__":
     args = add_args()
     config = args.config
+    stage = args.stage
+    dry_run = args.dryrun
     logger = setup_logs(args.loglevel, config.split("/")[-1][:-5], args.environment)
-    run_job(config, logger)
+    run_job(config, logger, stage, dry_run)
