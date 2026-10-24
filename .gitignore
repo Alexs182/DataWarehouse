@@ -4,6 +4,9 @@ config/airflow.cfg
 ingest_engine/tmp/*
 logs/*
 
+*.tar
+*.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

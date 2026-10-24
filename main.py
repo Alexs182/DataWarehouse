@@ -13,7 +13,7 @@ import pandas as pd
 
 from connectors.common import Common
 
-class Run:
+class Run(Common):
     def __init__(self, config, stage_type: str, dry_run: str):
         self.pipeline_config = config
         self.dry_run = dry_run
@@ -41,6 +41,7 @@ class Run:
         except Exception as e:
             self.logger.error(f"Job failed: {e}", exc_info=True)
             self._log_end(success=False)
+            raise
         
         self._log_end(success=True)
 
@@ -51,7 +52,7 @@ class Run:
                 # Load the connector module
                 connector_module = self._get_module("connectors", config.get('connector_type', ''))
                 # Execute the loader process
-                self.dataframe = connector_module.Connector(
+                self.data = connector_module.Connector(
                     mapper=config.get("mapper"),
                     connection=config.get('connection'),
                     logger=self.logger
@@ -60,14 +61,31 @@ class Run:
                     dataframe=self.dataframe
                 )
 
+                # Map data
+                mapper = config.get("mapper")
+                mapper = self.get_mapper(mapper, self.logger) if mapper else None
+
+                if mapper:
+                    self.data = self.map_data(
+                        logger=self.logger,
+                        records=self.data
+                    )
+
+                if isinstance(self.data, list):
+                    self.data = self.to_dataframe(
+                        records = self.data, 
+                        source_name = config.get('source_name', ''), 
+                        source_path = config.get('endpoint', '')
+                    )
+
                 if not dry_run:
                     # Load the mongo module
                     mongo_module = self._get_module("connectors", "mongo_connector")
                     # Execute the mongo load
-                    _ = mongo_module.Connector(config=config.get("mongodb"), logger=self.logger).write(dataframe=self.dataframe)
+                    _ = mongo_module.Connector(config=config.get("mongodb"), logger=self.logger).write(dataframe=self.data)
                 else:
                     self._dry_run()
-                    print(self.dataframe)
+                    print(self.data)
 
             case "load":
                 print("test")
@@ -193,4 +211,8 @@ if __name__ == "__main__":
     stage = args.stage
     dry_run = args.dryrun
     logger = setup_logs(args.loglevel, config.split("/")[-1][:-5], args.environment)
-    run_job(config, logger, stage, dry_run)
+
+    try:
+        run_job(config, logger, stage, dry_run)
+    except Exception:
+        sys.exit(1)

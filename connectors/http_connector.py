@@ -53,16 +53,9 @@ class Connector(Common):
 
         self.logger.info(f"Raw Response Record count: {len(self.raw_data)}.")
 
-    def to_dataframe(self, records: List[Dict[Any, Any]], source_name: str, source_path: str) -> pd.DataFrame:
-        if not records:
-            return pd.DataFrame([])
-        
-        dataframe = pd.DataFrame(records)
-        dataframe = self.apply_metadata(dataframe, source_name, source_path)
-        
-        return dataframe
 
-    def _ingest(self, endpoint: str, source_name: str, method: str, params: Dict[str, Any]):
+
+    def _ingest(self, endpoint: str, method: str, params: Dict[str, Any]):
             
         self.fetch(endpoint=endpoint, params=params, method=method)
 
@@ -75,38 +68,15 @@ class Connector(Common):
                 pipeline_name=self.config.get('job_name', '')
             )
 
-        # entry point for the mapper
-        mapped_records = self.map_data(
-            logger=self.logger, 
-            records=self.raw_data
-        )
-
-        if isinstance(mapped_records, list):
-            df = self.to_dataframe(
-                records = mapped_records, 
-                source_name = source_name, 
-                source_path = endpoint
-            )
-        
-        # entry point for mapped schema derivation
-        if self.config.get('data_schema', {}).get('active'):
-            self.get_schema(
-                schema_type="mapped_schema",
-                logger=self.logger,
-                records=df,
-                pipeline_name=self.config.get('job_name', '')
-            )
-
-        return df
+        return self.raw_data
     
     def run(self, config: Dict[str, Any], dataframe: pd.DataFrame):
         self.config = copy.deepcopy(config)
 
-        dataframe = self._ingest(
+        data = self._ingest(
             endpoint=config.get('endpoint', ''),
             method=config.get('method', ''),
-            params=config.get('params', {}),
-            source_name=config.get('source_name', '')
+            params=config.get('params', {})
         )
 
-        return dataframe       
+        return data  

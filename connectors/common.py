@@ -42,7 +42,14 @@ class Common():
             pipeline_name=pipeline_name
         )
 
-
+    def to_dataframe(self, records: List[Dict[Any, Any]], source_name: str, source_path: str) -> pd.DataFrame:
+        if not records:
+            return pd.DataFrame([])
+        
+        dataframe = pd.DataFrame(records)
+        dataframe = self.apply_metadata(dataframe, source_name, source_path)
+        
+        return dataframe
 
     def map_data(self, logger, records: List[Dict[Any, Any]] | pd.DataFrame) -> List[Dict[Any, Any]] | pd.DataFrame:
 

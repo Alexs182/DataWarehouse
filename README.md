@@ -1,61 +1,48 @@
-# DataWarehouse
 
-Basic universal ingestion engine and data warehouse management system written in Python. Allows for ingestion pipelines to be defined using simple yaml files. Data is transformed on read into a standardised envelope and inserted into a remote postgres database. 
 
-Data is modelled in a standardised medallion architecture using DBT for consumption within Apache Superset as BI platform. Scheduling and orchestration is achieved using Airflow and monitored using Grafana.
+## Testing Configs
 
-## Technologies
-- Docker
-- DBT
-- Postgres
-- Airflow
-- Python
-- Apache Superset
-- Grafana
-
-## Example executions
-
-Pre-reqs:-
-- venv is setup and requirements installed
-- postgres running and credentials* added to .env file
-
- ```python
-
-python3 main.py -c config/import/iss_now.yaml -e dev
-
- ```
-
-## Setting up a new pipeline
-
-### Adding a new config
-The config defines the execution of the pipeline, including the source and target systems, credentials, mappings and ingestion type. Existing pipeline definitions can be found in `ingest_engine/config`
-
-The definitions contain two major sections Extract and Target:
-
-```yaml
-extract:
-  table: "iss_now"
-  schema: "staging"
-  connection: "data_warehouse"
-  mapper: Null
-  connector_type: "postgres_connector"
-  execution_type: "read"
-
-target:
-  file_path: "/mnt/smb_share/alex/datastore/Exports/iss_now.json"
-  file_type: "JSON"
-  mapper: Null
-  connector_type: "file_connector"
-  execution_type: "write"
+```bash
+python3 main.py -c config/development/test_1.yaml -e dev
+python3 main.py -c config/development/test_2.yaml -e dev
 ```
 
-Depending on the connector type the config will differ, in the above example data is read from the data_warehouse (in this instance postgres) and written to file. 
 
-### Adding a new mapper
-Mappers allow for a customisable definition of data transformation on read. These are defined within the `transforms/mappers` folder. The files are simple python scripts that interpret incoming data and map it to a standardised format for easier downstream consumption.
+```bash
+python3 main.py -c config/export/export_staging.yaml -e dev
 
-An example of this transformation system would be:
-```python
+python3 main.py -c config/import/file/metal_bands.yaml -e dev
+
+python3 main.py -c config/import/api/iss_now.yaml -e dev
+python3 main.py -c config/import/api/iss_people.yaml -e dev
+
+python3 main.py -c config/import/api/coingecko_simpleprice.yaml -e dev
+python3 main.py -c config/import/api/coingecko_exchange_list.yaml -e dev
 
 ```
 
+
+## Schema generation
+There is a need to scrape and store the schemas of incoming pipelines. The aim of this is to aid 
+in the development of new pipelines and cut down on the current manual intervention needed to build
+a new pipeline. 
+
+The schemas are all stored within a table on the operational schema of the data warehouse database.
+
+### Workflow
+
+1. SQL section defined in config
+2. If its active extract the schema from both the source and the mapped data
+3. Parse the schema and store it in the table 
+
+The parsed schema can then be used by the: 
+`utils/dbt_generator`
+To build out the templates using the data stored in the warehouse. The generated sql is stored in 
+the:
+`utils/templates/generated` 
+folder for manual review and movement into the models folder for DBT.
+
+
+
+docker build --platform linux/amd64 -t ingest:0.1.0 .
+docker save ingest:0.1.0 -o ingest-0.1.0.tar
