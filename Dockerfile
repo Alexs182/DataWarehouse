@@ -5,7 +5,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY config ./config
 COPY connectors ./connectors
-COPY logs ./logs
 COPY transforms ./transforms
 COPY main.py ./main.py
 ENV PYTHONUNBUFFERED=1

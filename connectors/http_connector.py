@@ -11,10 +11,9 @@ from requests.exceptions import HTTPError
 from connectors.common import Common
 
 class Connector(Common):
-    def __init__(self, connection: str, mapper: str, logger):
+    def __init__(self, logger):
         load_dotenv()
         self.logger = logger
-        self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
         
         self.raw_data: List[Dict[Any, Any]] = []
 
@@ -71,7 +70,7 @@ class Connector(Common):
         return self.raw_data
     
     def run(self, config: Dict[str, Any], dataframe: pd.DataFrame):
-        self.config = copy.deepcopy(config)
+        self.config = config
 
         data = self._ingest(
             endpoint=config.get('endpoint', ''),
@@ -79,4 +78,6 @@ class Connector(Common):
             params=config.get('params', {})
         )
 
-        return data  
+        dataframe = self.to_dataframe(records=data)
+
+        return dataframe  

@@ -1,0 +1,9 @@
+logs/*
+\*.tar
+.env
+tests.py
+.git
+
+__pycache__/
+*.py[codz]
+*$py.class

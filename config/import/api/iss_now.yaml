@@ -1,17 +1,25 @@
-job_name: "iss_now_ingestion"
+job_name: "iss_now_ingest"
 
 stages:
-  - stage_type: "data"
+  - stage_name: "extract"
+    stage_type: "connector"
     connector_type: "http_connector"
-    mapper: "iss_now"
     source_name: "open-notify"
     endpoint: "http://api.open-notify.org/iss-now.json"
     method: "GET"
     params: {}
-    mongodb: 
-      connection: "default_mongodb"
-      database: "datawarehouse-dev"
-      collection_name: "iss_now_raw_data"
+
+  - stage_name: "transform"
+    stage_type: "transform"
+    mapper: "iss_now"
+
+  - stage_name: "load_operational_store"
+    stage_type: "connector"
+    connection: "default_mongodb"
+    connector_type: "mongo_connector"
+    execution_type: "write"
+    database: "datawarehouse-dev"
+    collection_name: "iss_now_raw_data"
 
   - stage_type: "data"
     connector_type: "postgres_connector"

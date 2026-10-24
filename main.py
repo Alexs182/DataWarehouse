@@ -8,7 +8,7 @@ import logging
 import importlib
 from typing import Any
 
-from pythonjsonlogger.json import JsonFormatter
+#from pythonjsonlogger.json import JsonFormatter
 import pandas as pd
 
 from connectors.common import Common
@@ -25,18 +25,42 @@ class Run(Common):
 
         self._log_start(self.pipeline_config)
 
-        self.execution_index = 0
 
     def execute(self):
-        config = self.pipeline_config[self.stage_type]
+        stages = self.pipeline_config.get('stages')
+        if not stages:
+            self.logger.error(f"Invalid config file missing 'stages' block.")
+            raise
+
+        # Overide to execute single stage from pipeline
+        if self.stage_type:
+            stages = [s for s in stages if s.get('stage_name') == self.stage_type]
+            if not stages:
+                self.logger.error(f"Override stage_name: {self.stage_type} not found in config.")
+                raise
+
+        stage_names = [s.get('stage_name', 'UNNAMED') for s in stages]
+        self.logger.info(f"Execution identified {len(stage_names)} to run: {', '.join(stage_names)}")
 
         try:
-            logger.info(f'Starting Execution: {self.stage_type} of pipeline {self.job_name}')
+            for stage in stages:
+                self.logger.info(f"Starting Execution of stage: {stage.get('stage_name', 'UNNAMED')}")
+                match stage.get('stage_type'):
+                    case "connector":
+                        connector_module = self._get_module("connectors", stage.get('connector_type', ''))
+                        self.dataframe = connector_module.Connector(logger=self.logger).run(
+                            config=stage,
+                            dataframe=self.dataframe
+                        )
+                    case "transform":
+                        mapper = stage.get("mapper")
+                        mapper = self.get_mapper(mapper, self.logger) if mapper else None
 
-            config = self._execute_stage(
-                config=copy.deepcopy(config),
-                stage_type=self.stage_type
-            )
+                        self.dataframe = self.map_data(logger=self.logger, records=self.dataframe)
+
+                    case _:
+                        self.logger.error(f"Invalid stage_type in stage: {stage.get('stage_name')}")
+
 
         except Exception as e:
             self.logger.error(f"Job failed: {e}", exc_info=True)
@@ -44,56 +68,6 @@ class Run(Common):
             raise
         
         self._log_end(success=True)
-
-    def _execute_stage(self, config, stage_type: str) -> dict[str, Any]:
-
-        match stage_type:
-            case "extract":
-                # Load the connector module
-                connector_module = self._get_module("connectors", config.get('connector_type', ''))
-                # Execute the loader process
-                self.data = connector_module.Connector(
-                    mapper=config.get("mapper"),
-                    connection=config.get('connection'),
-                    logger=self.logger
-                ).run(
-                    config=config,
-                    dataframe=self.dataframe
-                )
-
-                # Map data
-                mapper = config.get("mapper")
-                mapper = self.get_mapper(mapper, self.logger) if mapper else None
-
-                if mapper:
-                    self.data = self.map_data(
-                        logger=self.logger,
-                        records=self.data
-                    )
-
-                if isinstance(self.data, list):
-                    self.data = self.to_dataframe(
-                        records = self.data, 
-                        source_name = config.get('source_name', ''), 
-                        source_path = config.get('endpoint', '')
-                    )
-
-                if not dry_run:
-                    # Load the mongo module
-                    mongo_module = self._get_module("connectors", "mongo_connector")
-                    # Execute the mongo load
-                    _ = mongo_module.Connector(config=config.get("mongodb"), logger=self.logger).write(dataframe=self.data)
-                else:
-                    self._dry_run()
-                    print(self.data)
-
-            case "load":
-                print("test")
-            case _:
-                self.logger.error("No valid stage type in configuration.")
-                raise ValueError("Invalid stage type for main, should be either extract or load")
-
-        return config
 
     def _dry_run(self):
 
@@ -151,17 +125,21 @@ def setup_logs(loglevel: str, job_name: str, environment: str):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
-    handler = logging.FileHandler(logname, mode='a')
+    #handler = logging.FileHandler(logname, mode='a')
 
-    formatter = JsonFormatter(
-        "%(asctime)s %(name)s %(levelname)s %(message)s",
-        datefmt='%Y-%m-%d %H:%M:%S',
-        static_fields={
-            "job_name": job_name,
-            "environment": environment,
-            "execution_id": str(uuid.uuid4())
-        }
-    )
+    #formatter = JsonFormatter(
+    #    "%(asctime)s %(name)s %(levelname)s %(message)s",
+    #    datefmt='%Y-%m-%d %H:%M:%S',
+    #    static_fields={
+    #        "job_name": job_name,
+    #        "environment": environment,
+    #        "execution_id": str(uuid.uuid4())
+    #    }
+    #)
+
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
@@ -195,7 +173,7 @@ def add_args():
 
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to config file")
     parser.add_argument('-e', "--environment", type=str, required=True, help="Environment the run is targeting")
-    parser.add_argument("-s", "--stage", type=str, required=True, help="Config stage name")
+    parser.add_argument("-s", "--stage", type=str, help="Config stage name")
 
     parser.add_argument("-d", "--dryrun", type=str, required=False, help="Dry Run option, d = on screen, df = dry run file")
     parser.add_argument("-l", "--loglevel", type=str, help="Level for the logs, default Info")
@@ -214,5 +192,6 @@ if __name__ == "__main__":
 
     try:
         run_job(config, logger, stage, dry_run)
-    except Exception:
+    except Exception as e:
+        logger.error(e)
         sys.exit(1)

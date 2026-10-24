@@ -150,7 +150,7 @@ connector\_type defaults to an empty string, which is how you ended up with 'No 
 
 ## 3. Logging (P1)
 
-- **Log to stdout.** In k3s the Loki/Promtail path scrapes container stdout. A FileHandler to logs/ is awkward in a container, and in your Dockerfile the logs directory is copied in as root while the process runs as uid 10001, so opening the log file will fail with a permission error. Keep a file handler only as an opt-in via an environment variable.
+- **Log to stdout. In k3s the Loki/Promtail path scrapes container stdout. A FileHandler to logs/ is awkward in a container, and in your Dockerfile the logs directory is copied in as root while the process runs as uid 10001, so opening the log file will fail with a permission error. Keep a file handler only as an opt-in via an environment variable.**
 - setup\_logs adds a new handler every time it is called; guard against duplicates.
 - \_log\_end always reports Records processed: 0. Pass the real count, and add stage name and duration to the structured fields.
 - Logger.warn is deprecated; use warning. The message 'Loaded logger {map}' in get\_mapper should say mapper.
@@ -235,23 +235,24 @@ The circular-import workaround (importing the Postgres connector inside a method
 
 ### 7.1 requirements.txt
 
-- No Postgres driver (psycopg or psycopg2-binary), so the Postgres connector cannot connect in the image.
-- dotenv==0.9.9 is a compatibility shim; depend on python-dotenv directly.
-- astronomer-cosmos, apache-airflow-providers-fab and apache-airflow-providers-openlineage belong to your Airflow deployment, not this job image, and two of them are unpinned (and none pulls in apache-airflow itself). They almost certainly explain why the saved image tar is 570 MB.
-- jinja2 is imported by dbt\_generator but not listed.
+- **No Postgres driver (psycopg or psycopg2-binary), so the Postgres connector cannot connect in the image.**
+- **dotenv==0.9.9 is a compatibility shim; depend on python-dotenv directly.**
+- **astronomer-cosmos, apache-airflow-providers-fab and apache-airflow-providers-openlineage belong to your Airflow deployment, not this job image, and two of them are unpinned (and none pulls in apache-airflow itself). They almost certainly explain why the saved image tar is 570 MB.**
+- **jinja2 is imported by dbt\_generator but not listed.**
 - Split into requirements.txt (runtime) and requirements-dev.txt (pytest, ruff, jinja2, mypy), and pin with a lock file (pip-tools or uv).
 
 ### 7.2 Dockerfile
 
-- COPY logs ./logs ships your local log file into the image and creates a root-owned directory the app user cannot write to. Remove it.
-- Add a .dockerignore (logs, **pycache**, \*.tar, .env, tests, .git).
-- Rename dockerfile to Dockerfile. Tag images with the git SHA rather than only 0.1.0, and push to a registry (a local one on k3s works well) instead of docker save to a tarball.
+- **COPY logs ./logs ships your local log file into the image and creates a root-owned directory the app user cannot write to. Remove it.**
+- **Add a .dockerignore (logs, **pycache**, \*.tar, .env, tests, .git).**
+- **Rename dockerfile to Dockerfile.** 
+- Tag images with the git SHA rather than only 0.1.0, and push to a registry (a local one on k3s works well) instead of docker save to a tarball.
 
 ### 7.3 Repository
 
 The archive contains **pycache** folders, the 570 MB tar, a 38 KB log file, and no .gitignore, .env.example or pyproject.toml.
 
-- Add .gitignore and a .env.example listing the variables the code expects (default\_mongodb, data\_warehouse, openweathermap\_key).
+- **Add .gitignore and a .env.example listing the variables the code expects (default\_mongodb, data\_warehouse, openweathermap\_key).**
 - Make it a proper package with **init**.py files and a pyproject.toml, run as python -m ingest\_engine. That removes the sys.path.insert(0, '..') hacks in utils/.
 - Update the README: the examples omit the required -s flag, the config format is out of date, and the environment variables are undocumented. Move the notes file into TODO.md or issues.
 

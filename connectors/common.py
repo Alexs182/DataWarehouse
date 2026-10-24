@@ -18,9 +18,10 @@ class Common():
         try:
             module = importlib.import_module(f'transforms.mappers.{map}')
             mapper = module.Mapper()
-            logger.info(f"Loaded logger {map}")
+            logger.info(f"Loaded Mapper {map}")
         except ModuleNotFoundError as e:
             logger.warn(f"No mapping module found for {map}. Trace: {e}")
+            raise
         
         self.mapper = mapper
 
@@ -42,12 +43,13 @@ class Common():
             pipeline_name=pipeline_name
         )
 
-    def to_dataframe(self, records: List[Dict[Any, Any]], source_name: str, source_path: str) -> pd.DataFrame:
+    def to_dataframe(self, records: List[Dict[Any, Any]]) -> pd.DataFrame:
         if not records:
             return pd.DataFrame([])
-        
-        dataframe = pd.DataFrame(records)
-        dataframe = self.apply_metadata(dataframe, source_name, source_path)
+
+        dataframe = pd.json_normalize(records)
+        #dataframe = pd.DataFrame(records)
+        #dataframe = self.apply_metadata(dataframe, source_name, source_path)
         
         return dataframe
 
