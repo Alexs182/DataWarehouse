@@ -16,54 +16,13 @@ The main problem is that the code is **mid-refactor**. main.py moved to an extra
 
 ### 1.1 Failed jobs are reported as successful (DONE)
 
-In Run.execute, the call to \_log\_end(success=True) sits after the try/except, so it runs even after a failure. The exception is also swallowed, so the process exits 0. Airflow or k3s will mark a failed run as green. Your log file contains several historical 'Job failed' entries (missing logger argument, unexpected keyword 'dataframe', empty module name) that would have looked like successes to the scheduler.
+### 1.2 Two config formats, only one supported (DONE)
 
-```python
-def execute(self):
-    try:
-        self._run_stages()
-    except Exception:
-        self.logger.exception('Job failed')
-        self._log_end(success=False)
-        raise
-    self._log_end(success=True, records_processed=len(self.data))
+### 1.3 The load stage is a stub (DONE)
 
-# in __main__
-try:
-    run_job(...)
-except Exception:
-    sys.exit(1)
-```
+### 1.4 Module-level globals leak into Run (DONE)
 
-### 1.2 Two config formats, only one supported
-
-main.py reads pipeline\_config\['extract'\] and \['load'\]. Only iss\_now.yaml and iss\_people.yaml use that shape. The coingecko configs, openweathermap\_weather, metal\_bands, export\_staging and test\_1 to test\_5 still use a stages list. I reproduced it: running coingecko\_simpleprice.yaml fails with KeyError: 'extract', and that error is raised outside the try block so it is not even logged properly.
-
-Suggestion: standardise on an ordered **stages list**. Your connector interface (run(config, dataframe) returning a dataframe) is already designed for it: a read stage returns a frame, a write stage consumes one. The export pipeline (Postgres read, then file write) cannot be expressed cleanly as extract/load, but fits a stage list naturally.
-
-```python
-def run(self):
-    df = pd.DataFrame()
-    for stage in self.stages:
-        module = self._get_module('connectors', stage['connector_type'])
-        connector = module.Connector(**self._connector_args(stage))
-        df = connector.run(config=stage, dataframe=df)
-    return df
-```
-
-With that loop, the -s flag becomes optional (run everything, or a named subset) and the README examples, which already omit -s, become correct.
-
-### 1.3 The load stage is a stub
-
-\_execute\_stage has case 'load': print('test'). The Postgres connector is therefore unreachable from main.py, and the Mongo write is bolted onto the end of the extract stage. The stage loop above fixes both: Mongo and Postgres become ordinary write stages.
-
-### 1.4 Module-level globals leak into Run
-
-Run.execute uses logger and \_execute\_stage uses dry\_run, but neither is defined in the class. They resolve to variables created under if **name** == '**main**'. Importing Run from anywhere else raises NameError. Use self.logger and self.dry\_run.
-
-### 1.5 Dry run does not do what the flag says
-
-\_dry\_run prints self.dataframe, which is the empty frame created in **init**, not self.data. The 'df' option calls to\_json() and throws the result away. The flag is also a free-text string. Replace with --dry-run (store\_true) plus an optional --dry-run-output path.
+### 1.5 Dry run does not do what the flag says (DONE)
 
 ### 1.6 The OpenWeatherMap mapper loses most of its data
 

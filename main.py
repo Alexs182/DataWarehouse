@@ -1,4 +1,5 @@
 
+import os
 import sys
 import yaml
 import copy
@@ -6,7 +7,7 @@ import uuid
 import argparse
 import logging
 import importlib
-from typing import Any
+from typing import Any, Dict
 
 #from pythonjsonlogger.json import JsonFormatter
 import pandas as pd
@@ -14,15 +15,17 @@ import pandas as pd
 from connectors.common import Common
 
 class Run(Common):
-    def __init__(self, config, stage_type: str, dry_run: str):
+    def __init__(self, config, args: Dict[str, Any]):
+        self.dry_run = args['dry_run']
+        self.dry_run_file_path = args['dry_run_file_path']
+        self.stage = args['stage']
+
         self.pipeline_config = config
-        self.dry_run = dry_run
-        self.logger = logging.getLogger(__name__)
         self.job_name = self.pipeline_config['job_name']
-        self.stage_type = stage_type
 
         self.dataframe = pd.DataFrame()
 
+        self.logger = logging.getLogger(__name__)
         self._log_start(self.pipeline_config)
 
 
@@ -33,10 +36,10 @@ class Run(Common):
             raise
 
         # Overide to execute single stage from pipeline
-        if self.stage_type:
-            stages = [s for s in stages if s.get('stage_name') == self.stage_type]
+        if self.stage:
+            stages = [s for s in stages if s.get('stage_name') == self.stage]
             if not stages:
-                self.logger.error(f"Override stage_name: {self.stage_type} not found in config.")
+                self.logger.error(f"Override stage_name: {self.stage} not found in config.")
                 raise
 
         stage_names = [s.get('stage_name', 'UNNAMED') for s in stages]
@@ -44,9 +47,23 @@ class Run(Common):
 
         try:
             for stage in stages:
+
+                stage_name = stage.get('stage_name')
                 self.logger.info(f"Starting Execution of stage: {stage.get('stage_name', 'UNNAMED')}")
+
+                # Check if the pipeline stage is enabled, primarily for development
+                if stage.get("is_active") is False:
+                    self.logger.info(f"Stage {stage_name} is inactive.")
+                    break  
+
                 match stage.get('stage_type'):
                     case "connector":
+
+                        # bypass write operations in dry run
+                        if stage.get('operation_type') == "write" and self.dry_run:
+                            self.logger.info(f"Stage {stage_name} bypassing write operation due to dry run mode active")
+                            break
+
                         connector_module = self._get_module("connectors", stage.get('connector_type', ''))
                         self.dataframe = connector_module.Connector(logger=self.logger).run(
                             config=stage,
@@ -59,8 +76,15 @@ class Run(Common):
                         self.dataframe = self.map_data(logger=self.logger, records=self.dataframe)
 
                     case _:
-                        self.logger.error(f"Invalid stage_type in stage: {stage.get('stage_name')}")
+                        self.logger.error(f"Invalid stage_type in stage: {stage_name}")
+                        raise
 
+
+                # If the pipeline execution is in debug mode each stage's output
+                # is printed to screen
+                if self.dry_run:
+                    self._dry_run(stage_name)
+                
 
         except Exception as e:
             self.logger.error(f"Job failed: {e}", exc_info=True)
@@ -69,15 +93,11 @@ class Run(Common):
         
         self._log_end(success=True)
 
-    def _dry_run(self):
+    def _dry_run(self, stage_name: str):
+        print(self.dataframe)
 
-
-        match self.dry_run:
-            case "d":
-                print(self.dataframe)
-
-            case "df":
-                self.dataframe.to_json()
+        if self.dry_run_file_path:
+            self.dataframe.to_json(os.path.join(self.dry_run_file_path, f"{stage_name}.json"))
 
     @staticmethod
     def _get_module(module_source: str, module_type: str):
@@ -103,9 +123,9 @@ class Run(Common):
     
         self.logger.info(f"Records processed: {records_processed}")
 
-def run_job(config_file: str, logger, stage: str, dry_run: str):
-    config = get_config(config_file, logger)
-    Run(config, stage, dry_run).execute() 
+def run_job(args: Dict[str, Any], logger):
+    config = get_config(args['config'], logger)
+    Run(config, args).execute() 
 
 
 def get_config(config_file: str, logger):
@@ -175,7 +195,8 @@ def add_args():
     parser.add_argument('-e', "--environment", type=str, required=True, help="Environment the run is targeting")
     parser.add_argument("-s", "--stage", type=str, help="Config stage name")
 
-    parser.add_argument("-d", "--dryrun", type=str, required=False, help="Dry Run option, d = on screen, df = dry run file")
+    parser.add_argument("-d", "--dryrun", type=str, required=False, help="Optional dry run mode")
+    parser.add_argument("-df", "--dryrunpath", type=str, required=False, help="Dry Run filepath, optional to store dry run outputs in file")
     parser.add_argument("-l", "--loglevel", type=str, help="Level for the logs, default Info")
 
     args = parser.parse_args()
@@ -185,13 +206,19 @@ def add_args():
 
 if __name__ == "__main__":
     args = add_args()
-    config = args.config
-    stage = args.stage
-    dry_run = args.dryrun
-    logger = setup_logs(args.loglevel, config.split("/")[-1][:-5], args.environment)
+
+    args = {
+        "config": args.config,
+        "stage": args.stage,
+        "environment": args.environment,
+        "dry_run": args.dryrun,
+        "dry_run_file_path": args.dryrunpath,
+        "log_level": args.loglevel
+    }
+    logger = setup_logs(args['log_level'], args['config'].split("/")[-1][:-5], args['environment'])
 
     try:
-        run_job(config, logger, stage, dry_run)
+        run_job(args, logger)
     except Exception as e:
         logger.error(e)
         sys.exit(1)

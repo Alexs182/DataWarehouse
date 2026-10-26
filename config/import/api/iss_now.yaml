@@ -4,6 +4,7 @@ stages:
   - stage_name: "extract"
     stage_type: "connector"
     connector_type: "http_connector"
+    is_active: true
     source_name: "open-notify"
     endpoint: "http://api.open-notify.org/iss-now.json"
     method: "GET"
@@ -12,18 +13,22 @@ stages:
   - stage_name: "transform"
     stage_type: "transform"
     mapper: "iss_now"
+    is_active: true
 
   - stage_name: "load_operational_store"
     stage_type: "connector"
+    operation_type: "write"
     connection: "default_mongodb"
     connector_type: "mongo_connector"
+    is_active: true
     execution_type: "write"
     database: "datawarehouse-dev"
     collection_name: "iss_now_raw_data"
 
   - stage_type: "data"
     connector_type: "postgres_connector"
-    execution_type: "write"
+    operation_type: "write"
+    is_active: false
     connection: "data_warehouse"
     schema: "staging"
     table: "iss_now"
