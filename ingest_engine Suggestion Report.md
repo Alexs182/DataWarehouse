@@ -76,13 +76,11 @@ def make_session() -> requests.Session:
     return s
 ```
 
-### 2.2 Errors are logged and then ignored
-
-file\_connector (\_read\_file, \_write\_file), postgres\_connector (\_read\_data, \_write\_data) and mongo\_connector (write) catch exceptions, log them, and carry on. The job then continues with an empty frame and reports success. Rule of thumb: connectors log and **re-raise**; only main.py decides what a failure means. Related: postgres \_write\_data only catches two exception types, so error handling is inconsistent even within one function.
+### 2.2 Errors are logged and then ignored (DONE)
 
 ### 2.3 Mongo connector
 
-MongoClient connects lazily, so the bare except in connect() can never trigger and a bad URL is only discovered at insert time. Set serverSelectionTimeoutMS, call client.admin.command('ping') on connect, close the client when done, and handle BulkWriteError from insert\_many instead of swallowing every exception.
+ handle BulkWriteError from insert\_many instead of swallowing every exception.
 
 ### 2.4 Postgres connector
 

@@ -58,6 +58,7 @@ class Connector(Common):
                     self.logger.error(f"Invalid file_type: {file_type}")
         except Exception as e:
             self.logger.error(f"Error reading file: {file_name}. Error: {e}")
+            raise
 
         mapped_records = self.map_data(logger=self.logger, records=dataframe)
 
@@ -85,6 +86,7 @@ class Connector(Common):
                     self.logger.error(f"Invalid file_type: {file_type}")
         except Exception as e:
             self.logger.error(f"Error writing file: {file_name}. Error: {e}")
+            raise
 
 
     def run(self, config: Dict[str, Any], dataframe: pd.DataFrame):

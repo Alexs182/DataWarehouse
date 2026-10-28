@@ -1,5 +1,6 @@
 
 import os
+from typing import Dict, Any
 
 import pymongo
 import pandas as pd
@@ -13,20 +14,37 @@ class Connector(Common):
         load_dotenv()
         self.logger = logger
 
-    def connect(self, config: Dict[str, Any]):
-        self.server_url = os.getenv(config.get("connection", ""))
+    def check_server(self) -> None:
+        try:
+            self.client.admin.command("ping")
+        except Exception:
+            self.logger.error("Could not establish connection to server.")
+            raise
 
-        if self.server_url == "None":
-            self.logger.error(f"Connection: {self.server_url} not found in environment variables, check .env file and config.")
+    def check_database(self, database: str) -> None:
+        if database not in self.client.list_database_names():
+            self.logger.error(f"Database '{database}' not found on server.")
+            raise ValueError(f"Database '{database}' not found.")
+
+    def connect(self, config: Dict[str, Any]) -> None:
+        self.server_url = os.getenv(config.get("connection", ""))
+        if not self.server_url:
+            self.logger.error("Connection url not found in environment variables, check .env file and config.")
             raise Exception("MongoDB connection url not found.")
 
-        try:
-            self.client = pymongo.MongoClient(self.server_url)
-            self.db = self.client[config.get("database", "")]
-            self.collection = self.db[config.get("collection_name", "")]
-        except:
-            self.logger.error('Could not establish connection to server.')
-            raise
+        self.client = pymongo.MongoClient(self.server_url, serverSelectionTimeoutMS=30000)
+        self.check_server()
+
+        database = config.get("database", "")
+        self.check_database(database)
+
+        self.db = self.client[database]
+        self.collection = self.db[config.get("collection_name", "")]
+
+
+    def disconnect(self):
+        self.client.close()
+        self.logger.info("Mongo Connection closed.")
 
     def write(self, dataframe: pd.DataFrame) -> int:
         recordCount = len(dataframe.index)
@@ -38,6 +56,7 @@ class Connector(Common):
             self.collection.insert_many(dataframe.to_dict('records'))
         except Exception as e:
             self.logger.error(f"{e}")
+            raise
 
         return recordCount
 
@@ -45,6 +64,11 @@ class Connector(Common):
 
         self.connect(config=config)
 
-        match config.get('execution_type'):
-            case "write":
-                record_count = self.write(dataframe=dataframe)
+        try:
+            match config.get('execution_type'):
+                case "write":
+                    record_count = self.write(dataframe=dataframe)
+        finally:
+            self.disconnect()
+            
+        

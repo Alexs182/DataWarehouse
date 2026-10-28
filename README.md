@@ -3,6 +3,10 @@
 ## Testing Configs
 
 ```bash
+python -m pytest -v
+```
+
+```bash
 python3 main.py -c config/development/test_1.yaml -e dev
 python3 main.py -c config/development/test_2.yaml -e dev
 ```

@@ -40,8 +40,10 @@ class Connector(Common):
             )
         except pd.errors.DatabaseError as e:
             self.logger.error(f"Postgres Write error: {e}")
+            raise
         except exc.ArgumentError as e:
             self.logger.error(f"Invalid Postgres server url: {self.server_url}, {e}")
+            raise
 
 
     def _read_data(self, schema: str, table: str, stage_type: str, sql: str) -> pd.DataFrame:
@@ -59,6 +61,7 @@ class Connector(Common):
 
         except Exception as e:
             self.logger.error(f"{e}")
+            raise
 
         # only map data if this is a data type workflow
         # data to be used by the config should just return 
@@ -92,9 +95,6 @@ class Connector(Common):
                     schema=schema,
                     table=table
                 )
-            
-            case "bypass":
-                pass
 
             case _:
                 self.logger.error("No valid postgres execution_type in configuration.")
