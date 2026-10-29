@@ -9,13 +9,8 @@ import pandas as pd
 from connectors.common import Common
 
 class Connector(Common):
-    def __init__(self, 
-            connection: str,
-            logger,
-            mapper: Optional[str] = None
-        ):
+    def __init__(self, logger):
         self.logger = logger
-        self.mapper = self.get_mapper(mapper, self.logger) if mapper else None
 
     def _read_data(
             self, 
@@ -54,22 +49,14 @@ class Connector(Common):
             match file_type.upper():
                 case "JSON":
                     dataframe = pd.read_json(file_name)
+                case "CSV":
+                    dataframe = pd.read_csv(file_name)
+
                 case _:
                     self.logger.error(f"Invalid file_type: {file_type}")
         except Exception as e:
             self.logger.error(f"Error reading file: {file_name}. Error: {e}")
             raise
-
-        mapped_records = self.map_data(logger=self.logger, records=dataframe)
-
-        if isinstance(mapped_records, list):
-            mapped_records = pd.DataFrame(mapped_records)
-
-        dataframe = self.apply_metadata(
-            records=mapped_records, 
-            source_name=source_name, 
-            source_path=file_name
-        )
 
         return dataframe
         
@@ -78,9 +65,19 @@ class Connector(Common):
         try:
             match file_type.upper():
                 case "CSV":
-                    dataframe.to_csv(file_name, sep='\t', encoding='utf-8', index=False, header=True)
+                    dataframe.to_csv(
+                        file_name, 
+                        sep='\t', 
+                        encoding='utf-8', 
+                        index=False, 
+                        header=True
+                    )
                 case "JSON":
-                    dataframe.to_json(file_name, orient='records', lines=True)
+                    dataframe.to_json(
+                        file_name, 
+                        orient='records', 
+                        lines=True
+                    )
 
                 case _:
                     self.logger.error(f"Invalid file_type: {file_type}")

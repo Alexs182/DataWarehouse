@@ -37,7 +37,7 @@ class MapAssist():
         pass
 
     def get_date_time(self):
-        return datetime.datetime.now()
+        return datetime.datetime.now(datetime.timezone.utc)
     
     def create_table_from_dict(self, data):
         columns = []

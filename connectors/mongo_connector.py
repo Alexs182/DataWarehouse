@@ -3,6 +3,7 @@ import os
 from typing import Dict, Any
 
 import pymongo
+from pymongo.errors import BulkWriteError
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -27,9 +28,10 @@ class Connector(Common):
             raise ValueError(f"Database '{database}' not found.")
 
     def connect(self, config: Dict[str, Any]) -> None:
-        self.server_url = os.getenv(config.get("connection", ""))
+        connection = config.get("connection", "")
+        self.server_url = os.getenv(connection)
         if not self.server_url:
-            self.logger.error("Connection url not found in environment variables, check .env file and config.")
+            self.logger.error(f"Connection {connection} not found in environment variables, check .env file and config.")
             raise Exception("MongoDB connection url not found.")
 
         self.client = pymongo.MongoClient(self.server_url, serverSelectionTimeoutMS=30000)
@@ -54,8 +56,8 @@ class Connector(Common):
 
         try:
             self.collection.insert_many(dataframe.to_dict('records'))
-        except Exception as e:
-            self.logger.error(f"{e}")
+        except BulkWriteError as e:
+            self.logger.error(f"Failed to insert records to mongo: {e}")
             raise
 
         return recordCount

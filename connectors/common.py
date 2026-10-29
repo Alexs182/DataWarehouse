@@ -91,7 +91,7 @@ class Common():
             source_path: str
         ) -> pd.DataFrame:
 
-        ingest_time = datetime.datetime.now()
+        ingest_time = datetime.datetime.now(datetime.timezone.utc)
         
         records['_ingestion_date'] = ingest_time.strftime("%Y-%m-%d")
         records['_ingestion_timestamp'] = ingest_time.isoformat()

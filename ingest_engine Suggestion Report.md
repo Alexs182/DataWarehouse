@@ -44,9 +44,7 @@ def require_env(name: str) -> str:
     return value
 ```
 
-### 1.9 The test suite cannot run
-
-python -m unittest tests fails at import. The file stubs the connectors package with an empty module (so from connectors.common import ... fails), and it tests an older Run API (Run(config), \_extract, \_write\_to\_datastore, a target section, SystemExit on failure). See section 6.
+### 1.9 The test suite cannot run (DONE)
 
 ### 1.10 Schema capture and dbt generation call a connector API that no longer exists
 
@@ -77,21 +75,9 @@ def make_session() -> requests.Session:
 ```
 
 ### 2.2 Errors are logged and then ignored (DONE)
-
-### 2.3 Mongo connector
-
- handle BulkWriteError from insert\_many instead of swallowing every exception.
-
-### 2.4 Postgres connector
-
-- You pass a URL string to to\_sql and read\_sql, so pandas builds a fresh engine for every call and never disposes it. Create one engine (pool\_pre\_ping=True) per connector and dispose it at the end.
-- write\_mode defaults to an empty string, which pandas rejects. Validate config up front.
-- The entity column is written as JSON text via json.dumps. Write it as JSONB with to\_sql(dtype={'entity': JSONB}) and your dbt layer can use native operators.
-- psycopg is missing from requirements.txt (see section 7), so writes will fail inside the container.
-
-### 2.5 Time handling
-
-datetime.now() is naive local time. On your dev machine in the UK that shifts by an hour in summer, while a pod runs in UTC, so rows from different environments disagree. Use datetime.now(timezone.utc) everywhere and store real timestamp types. str(datetime) also drops the microseconds when they happen to be zero, which can break the 'YYYY-MM-DD HH24:MI:SS.FF6' parse in the bronze template; isoformat() avoids that.
+### 2.3 Mongo connector (DONE)
+### 2.4 Postgres connector (DONE)
+### 2.5 Time handling (DONE)
 
 ### 2.6 Deduplication and idempotency
 
@@ -107,46 +93,14 @@ connector\_type defaults to an empty string, which is how you ended up with 'No 
 
 ## 3. Logging (P1)
 
-- **Log to stdout. In k3s the Loki/Promtail path scrapes container stdout. A FileHandler to logs/ is awkward in a container, and in your Dockerfile the logs directory is copied in as root while the process runs as uid 10001, so opening the log file will fail with a permission error. Keep a file handler only as an opt-in via an environment variable.**
 - setup\_logs adds a new handler every time it is called; guard against duplicates.
 - \_log\_end always reports Records processed: 0. Pass the real count, and add stage name and duration to the structured fields.
-- Logger.warn is deprecated; use warning. The message 'Loaded logger {map}' in get\_mapper should say mapper.
-- get\_mapper catches ModuleNotFoundError for any missing module, including a broken import inside a mapper file, and reports it as 'no mapping module found'. Check e.name against the mapper module name and re-raise otherwise.
 - Replace print() calls in library code (schema\_transform, map\_assist, dbt\_generator) with logger calls.
 
 ## 4. Structure and design (P2)
 
-### 4.1 A real mapper contract
-
-Six mappers repeat the same event/entity scaffolding and each has a slightly different shape (some accumulate into self.map\_output, so calling map twice duplicates rows; one returns a DataFrame; two have extra optional methods). A small base class removes the copy-paste and makes mappers pure functions:
-
-```python
-class BaseMapper(ABC):
-    entity_type: str
-
-    @abstractmethod
-    def records(self, raw) -> Iterable[tuple[str, dict, str | None]]:
-        '''yield (entity_key, entity_dict, source_timestamp)'''
-
-    def map(self, raw) -> pd.DataFrame:
-        now = datetime.now(timezone.utc)
-        rows = []
-        for key, entity, src_ts in self.records(raw):
-            stamp = src_ts or now.isoformat()
-            rows.append({
-                'event_id': f'{self.entity_type}_{key}_{stamp}',
-                'entity_id': f'{self.entity_type}_{key}',
-                'entity': entity,
-                'event_occurred_timestamp': stamp,
-            })
-        return pd.DataFrame(rows)
-```
-
-Each concrete mapper then only extracts fields, which also makes them trivial to test.
-
-### 4.2 One place for mapping and metadata
-
-file\_connector maps inside \_read\_file, and main.py maps again after the connector returns. For metal\_bands the second pass would fail on the missing band\_name column. Metadata is attached in three places (file\_connector, Common.to\_dataframe, main). Decide that connectors only fetch and write, a transform step maps, and a single function adds metadata.
+### 4.1 A real mapper contract (DONE)
+### 4.2 One place for mapping and metadata (DONE)
 
 ### 4.3 Connector base class and a registry
 
@@ -190,19 +144,10 @@ The circular-import workaround (importing the Postgres connector inside a method
 
 ## 7. Packaging and repo hygiene (P1)
 
-### 7.1 requirements.txt
-
-- **No Postgres driver (psycopg or psycopg2-binary), so the Postgres connector cannot connect in the image.**
-- **dotenv==0.9.9 is a compatibility shim; depend on python-dotenv directly.**
-- **astronomer-cosmos, apache-airflow-providers-fab and apache-airflow-providers-openlineage belong to your Airflow deployment, not this job image, and two of them are unpinned (and none pulls in apache-airflow itself). They almost certainly explain why the saved image tar is 570 MB.**
-- **jinja2 is imported by dbt\_generator but not listed.**
-- Split into requirements.txt (runtime) and requirements-dev.txt (pytest, ruff, jinja2, mypy), and pin with a lock file (pip-tools or uv).
+### 7.1 requirements.txt (DONE)
 
 ### 7.2 Dockerfile
 
-- **COPY logs ./logs ships your local log file into the image and creates a root-owned directory the app user cannot write to. Remove it.**
-- **Add a .dockerignore (logs, **pycache**, \*.tar, .env, tests, .git).**
-- **Rename dockerfile to Dockerfile.** 
 - Tag images with the git SHA rather than only 0.1.0, and push to a registry (a local one on k3s works well) instead of docker save to a tarball.
 
 ### 7.3 Repository
