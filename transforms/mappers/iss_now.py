@@ -13,6 +13,7 @@ class Mapper(BaseMapper):
             lon = row.get('iss_position.longitude')
             entity = {
                 'message': row.get('message'),
+                'timestamp': ts,
                 'latitude': float(lat) if pd.notna(lat) else None,
                 'longitude': float(lon) if pd.notna(lon) else None,
             }

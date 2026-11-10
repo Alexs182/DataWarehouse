@@ -28,6 +28,7 @@ class BaseMapper(ABC):
                 'entity_id': f'{self.entity_type}_{key}',
                 'entity': entity,
                 'event_occurred_timestamp': stamp,
+                'event_ingested_timestamp': now.isoformat()
             })
         return pd.DataFrame(rows)
 

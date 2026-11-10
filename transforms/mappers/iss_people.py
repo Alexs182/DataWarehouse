@@ -1,28 +1,45 @@
-from transforms.mappers.map_assist import MapAssist
+from datetime import datetime, timezone
+import pandas as pd
 
-class Mapper(MapAssist):
-    def __init__(self):
-        self.map_output: list = []
+from transforms.mappers.map_assist import BaseMapper
 
-        self.entity_type: str = "ISS_PEOPLE"
-        self.event_classifier: str = self.get_date_time().strftime("%Y%m%d%H%M%S")
 
-    def map(self, data):
+# URL: http://api.open-notify.org/astros.json
+# {
+#   "people": [
+#       {"craft": "ISS", "name": "Oleg Kononenko"}, 
+#       {"craft": "ISS", "name": "Nikolai Chub"}, 
+#       {"craft": "ISS", "name": "Tracy Caldwell Dyson"}, 
+#       {"craft": "ISS", "name": "Matthew Dominick"}, 
+#       {"craft": "ISS", "name": "Michael Barratt"}, 
+#       {"craft": "ISS", "name": "Jeanette Epps"}, 
+#       {"craft": "ISS", "name": "Alexander Grebenkin"}, 
+#       {"craft": "ISS", "name": "Butch Wilmore"}, 
+#       {"craft": "ISS", "name": "Sunita Williams"}, 
+#       {"craft": "Tiangong", "name": "Li Guangsu"}, 
+#       {"craft": "Tiangong", "name": "Li Cong"}, 
+#       {"craft": "Tiangong", "name": "Ye Guangfu"}
+#   ], 
+#   "number": 12, 
+#   "message": "success"
+#}
 
-        for people in data.get('people'):
-            
-            key = str(people.get('name')).replace(" ", "")
+class Mapper(BaseMapper):
+    entity_type = "ISS_PEOPLE"
 
-            self.map_output.append({
-                "event_id": f"{self.entity_type}_{self.event_classifier}_{key}",
-                "entity_id": f"{self.entity_type}_{key}",
-                "entity": {
-                    "number":           str(data.get('number')),
-                    "message":          str(data.get('message')),
-                    "name":             str(people.get('name')),
-                    "craft":            str(people.get('craft'))
-                },
-                "event_occurred_timestamp": str(self.get_date_time())
-            })
+    def records(self, raw):
+        for row in raw.to_dict('records'):
 
-        return self.map_output
+            # Raw data contains no natural key and no timestamp so a proxy needs
+            # to be included in place
+            now = datetime.now(timezone.utc)
+            number = row.get('number')
+
+            entity = {
+                'ts': now, 
+                'message': row.get('message'),
+                'number': float(number) if pd.notna(number) else None,
+                'people': row.get('people')
+            }
+
+            yield str(now), entity, now

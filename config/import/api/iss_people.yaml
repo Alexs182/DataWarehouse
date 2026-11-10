@@ -1,21 +1,34 @@
 job_name: "iss_people_ingestion"
 
 stages:
-  - stage_type: "data"
+  - stage_name: "extract"
+    stage_type: "connector"
     connector_type: "http_connector"
-    mapper: "iss_people"
+    is_active: true
     source_name: "open-notify"
     endpoint: "http://api.open-notify.org/astros.json"
     method: "GET"
     params: {}
-    mongodb:
-      connection: "default_mongodb"
-      database: "datawarehouse-dev"
-      collection_name: "iss_people_raw_data"
+
+  - stage_name: "transform"
+    stage_type: "transform"
+    mapper: "iss_people"
+    is_active: true
+
+  - stage_name: "load_operational_store"
+    stage_type: "connector"
+    operation_type: "write"
+    connection: "default_mongodb"
+    connector_type: "mongo_connector"
+    is_active: true
+    execution_type: "write"
+    database: "datawarehouse-dev"
+    collection_name: "iss_people_raw_data"
 
   - stage_type: "data"
     connector_type: "postgres_connector"
     execution_type: "write"
+    is_active: false
     connection: "data_warehouse"
     schema: "staging"
     table: "iss_people"
