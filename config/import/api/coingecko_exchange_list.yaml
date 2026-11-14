@@ -1,8 +1,10 @@
 job_name: "coingecko_exchange_list_ingestion"
 
 stages:
-  - stage_type: "data"
+  - stage_name: "extract"
+    stage_type: "connector"
     connector_type: "http_connector"
+    is_active: true
     mapper: "coingecko_exchange_list"
     source_name: "coingecko"
     endpoint: "https://api.coingecko.com/api/v3/exchanges/list"
@@ -11,9 +13,25 @@ stages:
       status: "active"
     }
 
+  - stage_name: "transform"
+    stage_type: "transform"
+    mapper: "coingecko_exchange_list"
+    is_active: true
+
+  - stage_name: "load_operational_store"
+    stage_type: "connector"
+    operation_type: "write"
+    connection: "default_mongodb"
+    connector_type: "mongo_connector"
+    is_active: true
+    execution_type: "write"
+    database: "datawarehouse-dev"
+    collection_name: "coingecko_exchangelist_raw_data"
+
   - stage_type: "data"
     connector_type: "postgres_connector"
     execution_type: "write"
+    is_active: false
     connection: "data_warehouse"
     schema: "staging"
     table: "coingecko_exchange_list"

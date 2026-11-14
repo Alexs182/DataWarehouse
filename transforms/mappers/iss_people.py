@@ -28,11 +28,11 @@ class Mapper(BaseMapper):
     entity_type = "ISS_PEOPLE"
 
     def records(self, raw):
-        for row in raw.to_dict('records'):
+        # Raw data contains no natural key and no timestamp so a proxy needs
+        # to be included in place
+        now = datetime.now(timezone.utc)
 
-            # Raw data contains no natural key and no timestamp so a proxy needs
-            # to be included in place
-            now = datetime.now(timezone.utc)
+        for row in raw.to_dict('records'):
             number = row.get('number')
 
             entity = {

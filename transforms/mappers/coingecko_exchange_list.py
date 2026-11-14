@@ -1,22 +1,40 @@
+
+from datetime import datetime, timezone
+from typing import Iterable
+import pandas as pd
+
+from transforms.mappers.map_assist import BaseMapper
+
+
 from transforms.mappers.map_assist import MapAssist
 
-class Mapper(MapAssist):
-    def __init__(self):
-        self.map_output: list = []
 
-        self.entity_type: str = "EXCHANGE_LIST"
-        self.event_classifier: str = self.get_date_time().strftime("%Y%m%d%H%M%S")
-        
-    def map(self, data):
-        for item in data:
-            self.map_output.append({
-                "event_id": f"{self.entity_type}_{self.event_classifier}_{item.get('id')}",
-                "entity_id": f"{self.entity_type}_{item.get('id')}",
-                "entity": {
-                    "id":           str(item.get('id')),
-                    "name":         str(item.get('name')),
-                },
-                "event_occurred_timestamp": str(self.get_date_time())
-            })
+# Docs:
+# https://docs.coingecko.com/demo/reference/exchanges-list
+#
+#                           id                 name
+# 0     10kswap-starknet-alpha              10KSwap
+# 1                      9inch                9inch
+# 2                     9mm-v3  9mm V3 (Pulsechain)
+# 3                9mm-v3-base        9mm V3 (Base)
+# 4               9mm-v3-sonic       9mm V3 (Sonic)
 
-        return self.map_output
+
+class Mapper(BaseMapper):
+    entity_type = 'EXCHANGE_LIST'
+
+    def records(self, raw):
+        # Raw data contains no natural key and no timestamp so a proxy needs
+        # to be included in place
+        now = datetime.now(timezone.utc)
+
+        for row in raw.to_dict('records'):
+            entity_id = row.get('id')
+
+            entity = {
+                'ts': now,
+                'id': entity_id,
+                'name': row.get('name')
+            }
+
+            yield entity_id, entity, now
