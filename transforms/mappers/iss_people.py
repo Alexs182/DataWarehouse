@@ -43,3 +43,33 @@ class Mapper(BaseMapper):
             }
 
             yield str(now), entity, now
+
+
+# python3 -m transforms.mappers.iss_people
+
+if __name__ == "__main__":
+
+    dataframe = pd.DataFrame.from_dict(
+        data = [
+            {
+                "people": [
+                    {"craft": "ISS", "name": "Oleg Kononenko"},
+                    {"craft": "ISS", "name": "Oleg Kononenko"},
+                ],
+                "number": 2,
+                "message": "success"
+            },
+        ]
+    )
+
+    print("*"*20)
+    print("Input")
+    print("*"*20)
+    print(dataframe.to_string())
+
+    dataframe = Mapper().map(dataframe)
+
+    print("*"*20)
+    print("Output")
+    print("*"*20)    
+    print(dataframe.to_string())

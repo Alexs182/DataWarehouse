@@ -1,8 +1,9 @@
 from typing import Any
+from datetime import datetime, timezone
 
 import pandas as pd
 
-from transforms.mappers.map_assist import MapAssist
+from transforms.mappers.map_assist import BaseMapper
 
 class Mapper(MapAssist):
     def __init__(self):
@@ -59,3 +60,70 @@ class Mapper(MapAssist):
         })
 
         return self.map_output
+
+class Mapper(BaseMapper):
+    entity_type = "WEATHER"
+
+    def records(self, raw):
+
+        for row in raw.to_dict('records'):
+            entity_id = row.get('id')
+
+            entity = {
+                
+            }
+
+            yield entity_id, entity, 
+
+
+# python3 -m transforms.mappers.openweathermap_weather
+
+if __name__ == "__main__":
+
+    dataframe = pd.DataFrame.from_dict(
+        data = [
+            {
+                "weather": [
+                    {'id': 800, 'main': 'Clear', 'description': 'clear sky', 'icon': '01d'},
+                    {'id': 800, 'main': 'Clear', 'description': 'clear sky', 'icon': '01d'}
+                ],
+                "base": "stations",
+                "visibility": 10000,
+                "dt": 1794672393,
+                "timezone": 0,
+                "id": 2641324,
+                "name": "North Kesteven",
+                "cod": 200,
+                "coord.lon": -0.6333,
+                "coord.lat": 53.1167,
+                "main.temp": 279.49,
+                "main.feels_like": 276.33,
+                "main.temp_min": 278.42,
+                "main.temp_max": 280.92, 
+                "main.pressure": 1012,
+                "main.humidity": 77,
+                "main.sea_level": 1012,
+                "main.grnd_level": 1009,
+                "wind.speed": 4.63,
+                "wind.deg": 190,
+                "clouds.all": 3,
+                "sys.type": 1,
+                "sys.id": 1516,
+                "sys.country": "GB",
+                "sys.sunrise": 1794641074,
+                "sys.sunset": 1794672571
+            }
+        ]
+    )
+
+    print("*"*20)
+    print("Input")
+    print("*"*20)
+    print(dataframe.to_string())
+
+    dataframe = Mapper().map(dataframe)
+
+    print("*"*20)
+    print("Output")
+    print("*"*20)    
+    print(dataframe.to_string())

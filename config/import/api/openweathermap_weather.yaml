@@ -1,9 +1,10 @@
 job_name: "openweathermap_weather"
 
 stages:
-  - stage_type: "data"
+  - stage_name: "extract"
+    stage_type: "connector"
     connector_type: "http_connector"
-    mapper: "openweathermap_weather"
+    is_active: true
     source_name: "openweathermap"
     endpoint: "http://api.openweathermap.org/data/2.5/weather"
     method: "GET"
@@ -15,10 +16,26 @@ stages:
       appid: "openweathermap_key"
     }
 
+  - stage_name: "transform"
+    stage_type: "transform"
+    mapper: "openweathermap_weather"
+    is_active: true
+
+  - stage_name: "load_operational_store"
+    stage_type: "connector"
+    operation_type: "write"
+    connection: "default_mongodb"
+    connector_type: "mongo_connector"
+    is_active: false
+    execution_type: "write"
+    database: "datawarehouse-dev"
+    collection_name: "openweathermap_weather_raw_data"
+
   - stage_type: "data"
     connector_type: "postgres_connector"
     execution_type: "write"
     connection: "data_warehouse"
+    is_active: false
     schema: "staging"
     table: "openweathermap_weather"
     write_mode: "append"

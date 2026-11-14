@@ -6,9 +6,6 @@ import pandas as pd
 from transforms.mappers.map_assist import BaseMapper
 
 
-from transforms.mappers.map_assist import MapAssist
-
-
 # Docs:
 # https://docs.coingecko.com/demo/reference/exchanges-list
 #
@@ -38,3 +35,28 @@ class Mapper(BaseMapper):
             }
 
             yield entity_id, entity, now
+
+
+# python3 -m transforms.mappers.coingecko_exchange_list
+
+if __name__ == "__main__":
+
+    dataframe = pd.DataFrame.from_dict(
+        data = [
+            {"id": "10kswap-starknet-alpha", "name": "10KSwap"},
+            {"id": "9inch", "name": "9inch"},
+            {"id": "9mm-v3", "name": "9mm V3 (Pulsechain)"},
+        ]
+    )
+
+    print("*"*20)
+    print("Input")
+    print("*"*20)
+    print(dataframe.to_string())
+
+    dataframe = Mapper().map(dataframe)
+
+    print("*"*20)
+    print("Output")
+    print("*"*20)    
+    print(dataframe.to_string())

@@ -5,7 +5,6 @@ stages:
     stage_type: "connector"
     connector_type: "http_connector"
     is_active: true
-    mapper: "coingecko_exchange_list"
     source_name: "coingecko"
     endpoint: "https://api.coingecko.com/api/v3/exchanges/list"
     method: "GET"

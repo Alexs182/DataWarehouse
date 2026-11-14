@@ -94,7 +94,7 @@ class Run(Common):
         self._log_end(success=True)
 
     def _dry_run(self, stage_name: str):
-        print(self.dataframe)
+        print(self.dataframe.to_string())
 
         if self.dry_run_file_path:
             self.dataframe.to_json(os.path.join(self.dry_run_file_path, f"{stage_name}.json"))

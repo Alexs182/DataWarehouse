@@ -25,6 +25,16 @@ python3 main.py -c config/import/api/coingecko_exchange_list.yaml -e dev
 
 ```
 
+## Running the Mappers:
+
+From the root directory with venv enabled.
+
+```bash
+python3 -m transforms.mappers.iss_now
+
+python3 -m transforms.mappers.coingecko_simpleprice
+python3 -m transforms.mappers.coingecko_exchange_list
+```
 
 ## Schema generation
 There is a need to scrape and store the schemas of incoming pipelines. The aim of this is to aid 

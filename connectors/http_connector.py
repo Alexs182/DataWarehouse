@@ -78,6 +78,6 @@ class Connector(Common):
             params=config.get('params', {})
         )
 
-        dataframe = self.to_dataframe(records=data)
+        dataframe = self.to_dataframe(records=data, shape_config=config.get('source_shape'))
 
         return dataframe  
