@@ -5,62 +5,6 @@ import pandas as pd
 
 from transforms.mappers.map_assist import BaseMapper
 
-class Mapper(MapAssist):
-    def __init__(self):
-        self.map_output: list = []
-
-        self.entity_type: str = "WEATHER"
-        self.event_classifier: str = self.get_date_time().strftime("%Y%m%d%H%M%S")
-        
-    def map(self, data):
-        key = str(data.get('id'))
-
-        self.map_output.append({
-            "event_id": f"{self.entity_type}_{self.event_classifier}_{key}",
-            "entity_id": f"{self.entity_type}_{key}",
-            "entity": {
-                "id":               str(data.get('id')),
-                "name":             str(data.get('name')),
-                "timezone":         str(data.get('timezone')),
-                "cod":              str(data.get('cod')),
-                "datetime":         str(data.get('dt')),
-                "base":             str(data.get('base')),   
-
-                "latitude":         str(data.get('coord', {}).get('lat')),
-                "longitude":        str(data.get('coord', {}).get('lon')),                                   
-
-                "weather_id":         str(data.get('weather', {})[0].get('id')),
-                "weather_main":       str(data.get('weather', {})[0].get('main')), 
-                "weather_desc":       str(data.get('weather', {})[0].get('description')),
-                "weather_icon":       str(data.get('weather', {})[0].get('icon')), 
-
-                "main_temp":        str(data.get('main', {}).get('temp')),
-                "main_temp":        str(data.get('main', {}).get('feels_like')),
-                "main_temp":        str(data.get('main', {}).get('temp_min')),
-                "main_temp":        str(data.get('main', {}).get('temp_max')),
-                "main_temp":        str(data.get('main', {}).get('pressure')),
-                "main_temp":        str(data.get('main', {}).get('humidity')),
-                "main_temp":        str(data.get('main', {}).get('sea_level')),
-                "main_temp":        str(data.get('main', {}).get('grnd_level')),
-
-                "visibility":       str(data.get('visibility')),
-
-                "wind_speed":       str(data.get('wind', {}).get('speed')),
-                "wind_deg":         str(data.get('wind', {}).get('deg')),
-
-                "clouds_all":       str(data.get('clouds', {}).get('all')),
-
-                "sys_type":         str(data.get('sys', {}).get('type')),
-                "sys_id":           str(data.get('sys', {}).get('id')),
-                "sys_country":      str(data.get('sys', {}).get('country')),
-                "sys_sunrise":      str(data.get('sys', {}).get('sunrise')),
-                "sys_sunset":       str(data.get('sys', {}).get('sunset'))
-            },
-            "event_occurred_timestamp": str(self.get_date_time())
-        })
-
-        return self.map_output
-
 class Mapper(BaseMapper):
     entity_type = "WEATHER"
 
@@ -69,11 +13,66 @@ class Mapper(BaseMapper):
         for row in raw.to_dict('records'):
             entity_id = row.get('id')
 
+            dt = int(row.get('dt'))
+            sunrise = int(row.get('sys.sunrise'))
+            sunset = int(row.get('sys.sunset'))
+
+            lat = row.get('coord.lat')
+            lon = row.get('coord.lon')
+
+            temp = row.get('main.temp')
+            feels_like = row.get('main.feels_like')
+            temp_min = row.get('main.temp_min')
+            temp_max = row.get('main.temp_max')
+            wind_speed = row.get('wind.speed')
+
+
+
+            weather = []
+            for item in row.get('weather'):
+                weather.append({
+                    "weather_id": item.get('id'),
+                    "weather_name": item.get('main'),
+                    "weather_desc": item.get('description')
+                })
+
             entity = {
+                "location_id": int(row.get('id')),
+                "location_name": row.get('name'),
+                "last_updated_at": dt, 
+                "timezone": int(row.get('timezone')),
+                "location_longitude": float(lon) if pd.notna(lon) else None,
+                "location_latitude": float(lat) if pd.notna(lat) else None, 
+
+                "weather": weather,
+                "temperature": {
+                    "temperature": float(temp) if pd.notna(temp) else None,
+                    "feels_like": float(feels_like) if pd.notna(feels_like) else None,
+                    "temperature_minimum": float(temp_min) if pd.notna(temp_min) else None,
+                    "temperature_maximum": float(temp_max) if pd.notna(temp_max) else None
+                },
+                "conditions": {
+                    "visibility": int(row.get('visibility')),
+                    "pressue": int(row.get('main.pressure')),
+                    "humidity": int(row.get('main.humidity')),
+                    "sea_level": int(row.get('main.sea_level')),
+                    "ground_level": int(row.get('main.grnd_level')),
+                    "wind_speed": float(wind_speed) if pd.notna(wind_speed) else None,
+                    "wind_degrees": int(row.get('wind.deg')),
+                    "cloud_cover": int(row.get('clouds.all'))
+                },
+
+                "system": {
+                    "type": int(row.get('sys.type')),
+                    "system_id": int(row.get('id')),
+                    "country": row.get('sys.country'),
+                    "sunrise_datetime": sunrise,
+                    "sunset_datetime": sunset
+                }
                 
             }
 
-            yield entity_id, entity, 
+            yield entity_id, entity, datetime.fromtimestamp(dt, timezone.utc).isoformat()
 
 
 # python3 -m transforms.mappers.openweathermap_weather

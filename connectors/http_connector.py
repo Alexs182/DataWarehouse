@@ -3,7 +3,6 @@ import os
 import copy
 from typing import Dict, List, Optional, Any
 
-from dotenv import load_dotenv
 import pandas as pd
 import requests
 from requests.exceptions import HTTPError
@@ -12,7 +11,6 @@ from connectors.common import Common
 
 class Connector(Common):
     def __init__(self, logger):
-        load_dotenv()
         self.logger = logger
         
         self.raw_data: List[Dict[Any, Any]] = []
@@ -22,10 +20,7 @@ class Connector(Common):
     
     def _inject_secret_values(self, key: str, params: Dict[str, Any]) -> Dict[str, Any]:
         key_name = self.config.get("secrets", {}).get(key)
-        secret_key = os.getenv(key_name)
-        if secret_key == "None":
-            self.logger.error(f'Secret: {key} not found in environment variables, check .env file and config.')
-            raise Exception("Secret value not found.")
+        secret_key = self.require_env(key_name)
 
         params[key] = secret_key
 

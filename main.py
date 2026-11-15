@@ -12,6 +12,8 @@ from typing import Any, Dict
 #from pythonjsonlogger.json import JsonFormatter
 import pandas as pd
 
+from dotenv import load_dotenv
+
 from connectors.common import Common
 
 class Run(Common):
@@ -26,7 +28,7 @@ class Run(Common):
         self.dataframe = pd.DataFrame()
 
         self.logger = logging.getLogger(__name__)
-        self._log_start(self.pipeline_config)
+        self._log_start()
 
 
     def execute(self):
@@ -91,7 +93,7 @@ class Run(Common):
             self._log_end(success=False)
             raise
         
-        self._log_end(success=True)
+        self._log_end(success=True, records_processed=len(self.dataframe.index))
 
     def _dry_run(self, stage_name: str):
         print(self.dataframe.to_string())
@@ -105,21 +107,14 @@ class Run(Common):
         module = importlib.import_module(mod_name)
         return module
 
-    def _log_start(self, config: dict[str, Any] | None, stage = None):
-        if stage:
-            self.logger.info(f"Starting Job Stage: {stage}")
-            self.logger.debug(f"Config: {config}")
-        else:
-            self.logger.info(f"Starting job: {self.job_name}")
-            self.logger.debug(f"Config: {self.pipeline_config}")
+    def _log_start(self):
+        self.logger.info(f"Starting job: {self.job_name}")
+        self.logger.debug(f"Config: {self.pipeline_config}")
 
-    def _log_end(self, success: bool, records_processed: int = 0, stage = None):
+    def _log_end(self, success: bool, records_processed: int = 0):
         status = "Success" if success else "Failed"
 
-        if stage:
-            self.logger.info(f"Job Stage {stage} complete with status: {status}")
-        else:
-            self.logger.info(f"Job {self.job_name} complete with status: {status}")
+        self.logger.info(f"Job {self.job_name} complete with status: {status}")
     
         self.logger.info(f"Records processed: {records_processed}")
 
@@ -205,6 +200,7 @@ def add_args():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     args = add_args()
 
     args = {

@@ -23,6 +23,7 @@ python3 main.py -c config/import/api/iss_people.yaml -e dev
 python3 main.py -c config/import/api/coingecko_simpleprice.yaml -e dev
 python3 main.py -c config/import/api/coingecko_exchange_list.yaml -e dev
 
+python3 main.py -c config/import/api/openweathermap_weather.yaml -e dev 
 ```
 
 ## Running the Mappers:
@@ -34,6 +35,8 @@ python3 -m transforms.mappers.iss_now
 
 python3 -m transforms.mappers.coingecko_simpleprice
 python3 -m transforms.mappers.coingecko_exchange_list
+
+python3 -m transforms.mappers.openweathermap_weather
 ```
 
 ## Schema generation

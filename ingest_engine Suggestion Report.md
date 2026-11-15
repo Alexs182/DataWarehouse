@@ -13,24 +13,13 @@ The main problem is that the code is **mid-refactor**. main.py moved to an extra
 **Priority key:** P0 = broken now. P1 = will bite in production. P2 = design improvement. P3 = polish.
 
 ## 1. Broken right now (P0)
-
 ### 1.1 Failed jobs are reported as successful (DONE)
-
 ### 1.2 Two config formats, only one supported (DONE)
-
 ### 1.3 The load stage is a stub (DONE)
-
 ### 1.4 Module-level globals leak into Run (DONE)
-
 ### 1.5 Dry run does not do what the flag says (DONE)
-
-### 1.6 The OpenWeatherMap mapper loses most of its data
-
-The entity dict defines the key main\_temp eight times (pyflakes flags this). Python keeps only the last, so the stored main\_temp is actually grnd\_level, and temp, feels\_like, temp\_min, temp\_max, pressure, humidity and sea\_level are silently dropped. Rename the keys (main\_temp, main\_feels\_like, main\_temp\_min and so on). Also, data.get('weather', {})\[0\] raises if weather is missing or empty; use a safe first-element helper.
-
-### 1.7 Missing values are stored as the string 'None'
-
-Every mapper wraps values in str(...). A missing field becomes the literal text 'None', and numbers lose their type before they reach the warehouse. Keep native types inside entity (None stays null, numbers stay numbers) and do casting in dbt using the schema you already capture.
+### 1.6 The OpenWeatherMap mapper loses most of its data (DONE)
+### 1.7 Missing values are stored as the string 'None' (DONE)
 
 ### 1.8 Environment-variable checks never fire
 
@@ -89,7 +78,8 @@ event\_id includes event\_classifier, which is the **run time**. Two overlapping
 
 ### 2.8 Validate configs at load time
 
-connector\_type defaults to an empty string, which is how you ended up with 'No module named transforms.' in the logs. Define a small model per stage (pydantic or dataclasses) listing required keys per connector and execution\_type, and fail fast with a clear message. Also call load\_dotenv() once in main.py rather than in every connector constructor.
+connector\_type defaults to an empty string, which is how you ended up with 'No module named transforms.' in the logs. Define a small model per stage (pydantic or dataclasses) listing required keys per connector and execution\_type, and fail fast with a clear message. 
+
 
 ## 3. Logging (P1)
 
@@ -106,9 +96,7 @@ connector\_type defaults to an empty string, which is how you ended up with 'No 
 
 Give connectors an abstract base with run(config, dataframe). Replace string-built import paths with a dict (CONNECTORS = {'http\_connector': HttpConnector, ...}). You keep config-driven selection but gain clear errors and easier testing. Run currently inherits Common but never calls Common.**init**; prefer composition over inheriting a grab-bag of helpers.
 
-### 4.4 Remove dead code from the old design
-
-Common.rebuild\_config and mapper.config() (stage-index logic from the earlier multi-stage design), MapAssist.create\_table\_from\_dict, the stage parameter of \_log\_start, and utils/get\_api\_request.py (uses the old signature and dataframe\[0\].to\_json() on a DataFrame).
+### 4.4 Remove dead code from the old design (DONE)
 
 ### 4.5 Config improvements
 

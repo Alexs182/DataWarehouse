@@ -1,4 +1,5 @@
 
+import os
 import json
 import datetime
 import importlib
@@ -128,7 +129,6 @@ class Common():
             sep=cfg.sep,
         )
 
-
     def map_data(self, logger, records: List[Dict[Any, Any]] | pd.DataFrame) -> List[Dict[Any, Any]] | pd.DataFrame:
 
         if isinstance(records, list) and not records: 
@@ -144,21 +144,12 @@ class Common():
         logger.warn("Mapping failed: No mapper to complete mapping")
         return []
 
-    def rebuild_config(
-            self,
-            logger,
-            pipeline_config,
-            stage_config,
-            dataframe: pd.DataFrame   
-        ):
-
-        if self.mapper:
-            pipeline_config = self.mapper.config(dataframe, pipeline_config)
-        
-        index = stage_config.get('index') + 1
-        pipeline_config['stages'] = pipeline_config['stages'][index:]
-
-        return pipeline_config
+    @staticmethod
+    def require_env(name: str) -> str:
+        value = os.getenv(name or '')
+        if not value:
+            raise RuntimeError(f'Environment variable {name!r} is not set')
+        return value
 
     @staticmethod
     def apply_metadata(

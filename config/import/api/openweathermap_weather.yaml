@@ -10,7 +10,8 @@ stages:
     method: "GET"
     params: {
       id: 2641324,
-      appid: "ENVsecret"
+      appid: "ENVsecret",
+      units: "metric"
     }
     secrets: {
       appid: "openweathermap_key"
@@ -26,7 +27,7 @@ stages:
     operation_type: "write"
     connection: "default_mongodb"
     connector_type: "mongo_connector"
-    is_active: false
+    is_active: true
     execution_type: "write"
     database: "datawarehouse-dev"
     collection_name: "openweathermap_weather_raw_data"
