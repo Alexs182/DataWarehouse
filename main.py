@@ -11,10 +11,11 @@ from typing import Any, Dict
 
 #from pythonjsonlogger.json import JsonFormatter
 import pandas as pd
-
 from dotenv import load_dotenv
 
 from connectors.common import Common
+from connectors import get_connector
+from utils.job_config import ConfigError, load_pipeline_config
 
 class Run(Common):
     def __init__(self, config, args: Dict[str, Any]):
@@ -56,7 +57,7 @@ class Run(Common):
                 # Check if the pipeline stage is enabled, primarily for development
                 if stage.get("is_active") is False:
                     self.logger.info(f"Stage {stage_name} is inactive.")
-                    break  
+                    continue  
 
                 match stage.get('stage_type'):
                     case "connector":
@@ -64,13 +65,10 @@ class Run(Common):
                         # bypass write operations in dry run
                         if stage.get('operation_type') == "write" and self.dry_run:
                             self.logger.info(f"Stage {stage_name} bypassing write operation due to dry run mode active")
-                            break
+                            continue
 
-                        connector_module = self._get_module("connectors", stage.get('connector_type', ''))
-                        self.dataframe = connector_module.Connector(logger=self.logger).run(
-                            config=stage,
-                            dataframe=self.dataframe
-                        )
+                        connector = get_connector(stage['connector_type'])(logger=self.logger)
+                        self.dataframe = connector.run(config=stage, dataframe=self.dataframe)
                     case "transform":
                         mapper = stage.get("mapper")
                         mapper = self.get_mapper(mapper, self.logger) if mapper else None
@@ -92,8 +90,8 @@ class Run(Common):
             self.logger.error(f"Job failed: {e}", exc_info=True)
             self._log_end(success=False)
             raise
-        
-        self._log_end(success=True, records_processed=len(self.dataframe.index))
+
+        self._log_end(success=True, records_processed=len(self.dataframe))
 
     def _dry_run(self, stage_name: str):
         print(self.dataframe.to_string())
@@ -113,25 +111,25 @@ class Run(Common):
 
     def _log_end(self, success: bool, records_processed: int = 0):
         status = "Success" if success else "Failed"
-
         self.logger.info(f"Job {self.job_name} complete with status: {status}")
-    
         self.logger.info(f"Records processed: {records_processed}")
 
 def run_job(args: Dict[str, Any], logger):
-    config = get_config(args['config'], logger)
+    raw = get_config(args['config'], logger)
+    config = load_pipeline_config(raw).model_dump()
+
     Run(config, args).execute() 
 
 
 def get_config(config_file: str, logger):
     try:
         with open(config_file, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-
-            return config
+            return yaml.safe_load(f)
     except FileNotFoundError:
         logger.error(f"Unable to open file: {config_file}")
-        raise Exception("Missing config for execution")
+        raise ConfigError(f"Missing config for execution: {config_file}") from None
+    except yaml.YAMLError as e:
+        raise ConfigError(f"Config file {config_file} is not valid YAML: {e}") from None
 
 def setup_logs(loglevel: str, job_name: str, environment: str):
 
@@ -215,6 +213,11 @@ if __name__ == "__main__":
 
     try:
         run_job(args, logger)
+    except ConfigError as e:
+        # Config problems can never succeed on retry: distinct exit code so
+        # Airflow/k8s can treat it differently from a transient failure.
+        logger.error(f"Configuration error: {e}")
+        sys.exit(2)
     except Exception as e:
         logger.error(e)
         sys.exit(1)

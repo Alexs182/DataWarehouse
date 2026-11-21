@@ -5,14 +5,11 @@ from typing import Dict, Any
 import pymongo
 from pymongo.errors import BulkWriteError
 import pandas as pd
-from dotenv import load_dotenv
 
-from connectors.common import Common
+from connectors.base import BaseConnector
 
-class Connector(Common):
+class MongoConnector(BaseConnector):
     def __init__(self, logger):
-        
-        load_dotenv()
         self.logger = logger
 
     def check_server(self) -> None:
@@ -29,7 +26,7 @@ class Connector(Common):
 
     def connect(self, config: Dict[str, Any]) -> None:
         connection = config.get("connection", "")
-        self.server_url = os.getenv(connection)
+        self.server_url = self.require_env(connection)
         if not self.server_url:
             self.logger.error(f"Connection {connection} not found in environment variables, check .env file and config.")
             raise Exception("MongoDB connection url not found.")

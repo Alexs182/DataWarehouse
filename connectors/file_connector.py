@@ -8,7 +8,7 @@ import pandas as pd
 
 from connectors.common import Common
 
-class Connector(Common):
+class FileConnector(Common):
     def __init__(self, logger):
         self.logger = logger
 

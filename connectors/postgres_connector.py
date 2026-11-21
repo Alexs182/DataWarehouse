@@ -4,7 +4,6 @@ import json
 import logging
 from typing import Optional, Dict, Any
 
-from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError, ArgumentError
@@ -12,10 +11,9 @@ from sqlalchemy.types import JSON
 
 from connectors.common import Common
 
-class Connector(Common):
+class PostgresConnector(Common):
 
     def __init__(self, logger):
-        load_dotenv()
         self.logger = logger
 
     def check_server(self):
@@ -29,7 +27,7 @@ class Connector(Common):
 
     def connect(self, config: Dict[str, Any]):
         connection = config.get("connection", "")
-        self.server_url = os.getenv(connection)
+        self.server_url = self.require_env(connection)
         if not self.server_url:
             self.logger.error(f"Connection: {connection} not found in environment variables, check .env file and config.")
             raise Exception("Postgres connection url not found.")
