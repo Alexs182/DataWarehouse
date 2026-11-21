@@ -20,84 +20,36 @@ The main problem is that the code is **mid-refactor**. main.py moved to an extra
 ### 1.5 Dry run does not do what the flag says (DONE)
 ### 1.6 The OpenWeatherMap mapper loses most of its data (DONE)
 ### 1.7 Missing values are stored as the string 'None' (DONE)
-
-### 1.8 Environment-variable checks never fire
-
-os.getenv returns None, not the string 'None'. mongo\_connector and http\_connector compare against 'None', so a missing secret passes straight through. In http\_connector.\_inject\_secret\_values, a key absent from the secrets block makes os.getenv(None) raise a TypeError. The Postgres connector only works because its f-string turns None into 'None'. Use a small helper everywhere:
-
-```python
-def require_env(name: str) -> str:
-    value = os.getenv(name or '')
-    if not value:
-        raise RuntimeError(f'Environment variable {name!r} is not set')
-    return value
-```
-
+### 1.8 Environment-variable checks never fire (DONE)
 ### 1.9 The test suite cannot run (DONE)
-
 ### 1.10 Schema capture and dbt generation call a connector API that no longer exists
 
 schema\_transform.\_insert\_schema and dbt\_generator both call Connector.run(pipeline\_config=..., stage\_config=...). The current signature is run(config, dataframe). Details and fixes are in section 5.
 
-## 2. Reliability (P1)
-
-### 2.1 HTTP connector
-
-- **No timeout.** requests.get has none, so a stalled API call can hang an Airflow task or pod indefinitely. Always pass timeout=(5, 30) or similar.
-- **method is read but ignored.** Everything is a GET.
-- **No retries.** CoinGecko rate-limits aggressively (HTTP 429). Use a Session with urllib3 Retry and backoff.
-- **Latent secret leak.** The HTTPError text from requests includes the full URL, query string and all, and you re-wrap it and log it. For OpenWeatherMap that URL contains appid. I found no leaked key in the log you sent, so this is a risk rather than an incident. Scrub or avoid logging URLs with params.
-- **Mutating config.** Secrets are injected into the params dict in place; build a copy for the request instead.
-
-```python
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
-def make_session() -> requests.Session:
-    retry = Retry(total=3, backoff_factor=1.0,
-                  status_forcelist=(429, 500, 502, 503, 504),
-                  allowed_methods=('GET',))
-    s = requests.Session()
-    s.mount('https://', HTTPAdapter(max_retries=retry))
-    s.mount('http://', HTTPAdapter(max_retries=retry))
-    return s
-```
-
+## 2. Reliability (P1) (DONE)
+### 2.1 HTTP connector (DONE)
 ### 2.2 Errors are logged and then ignored (DONE)
 ### 2.3 Mongo connector (DONE)
 ### 2.4 Postgres connector (DONE)
 ### 2.5 Time handling (DONE)
-
-### 2.6 Deduplication and idempotency
-
-event\_id includes event\_classifier, which is the **run time**. Two overlapping polls that return the same source reading therefore get different event\_ids, so the DEDUPE step in bronze.sql can only ever remove exact re-runs. Build event\_id from source facts instead (entity key plus the source timestamp: ISS timestamp, weather dt, CoinGecko last\_updated\_at) and keep ingestion time in its own column. Similarly, event\_occurred\_timestamp currently holds the ingestion time, not the time the event happened. Either rename it or populate it from the source timestamp.
-
-### 2.7 Raw data is not actually kept
-
-\_raw\_json is always set to an empty string, and the Mongo collections are named iss\_now\_raw\_data and so on, but the Mongo write happens **after** mapping so they hold mapped rows. Write the untouched API response to Mongo before mapping (that is what makes it a raw layer) and either fill \_raw\_json or drop the column.
-
-### 2.8 Validate configs at load time
-
-connector\_type defaults to an empty string, which is how you ended up with 'No module named transforms.' in the logs. Define a small model per stage (pydantic or dataclasses) listing required keys per connector and execution\_type, and fail fast with a clear message. 
-
+### 2.6 Deduplication and idempotency (DONE)
+### 2.7 Raw data is not actually kept (DONE)
+### 2.8 Validate configs at load time (DONE)
 
 ## 3. Logging (P1)
 
 - setup\_logs adds a new handler every time it is called; guard against duplicates.
-- \_log\_end always reports Records processed: 0. Pass the real count, and add stage name and duration to the structured fields.
 - Replace print() calls in library code (schema\_transform, map\_assist, dbt\_generator) with logger calls.
 
 ## 4. Structure and design (P2)
 
 ### 4.1 A real mapper contract (DONE)
 ### 4.2 One place for mapping and metadata (DONE)
-
 ### 4.3 Connector base class and a registry
 
-Give connectors an abstract base with run(config, dataframe). Replace string-built import paths with a dict (CONNECTORS = {'http\_connector': HttpConnector, ...}). You keep config-driven selection but gain clear errors and easier testing. Run currently inherits Common but never calls Common.**init**; prefer composition over inheriting a grab-bag of helpers.
+- Run currently inherits Common but never calls Common.**init**; prefer composition over inheriting a grab-bag of helpers.
 
 ### 4.4 Remove dead code from the old design (DONE)
-
 ### 4.5 Config improvements
 
 - **-e is accepted but only written to the logs.** Use it to select per-environment overlays. Today datawarehouse-dev is hard-coded in the YAML, and paths like /mnt/smb\_share/alex/... are hard-coded in three configs.
@@ -133,7 +85,6 @@ The circular-import workaround (importing the Postgres connector inside a method
 ## 7. Packaging and repo hygiene (P1)
 
 ### 7.1 requirements.txt (DONE)
-
 ### 7.2 Dockerfile
 
 - Tag images with the git SHA rather than only 0.1.0, and push to a registry (a local one on k3s works well) instead of docker save to a tarball.
@@ -142,14 +93,12 @@ The circular-import workaround (importing the Postgres connector inside a method
 
 The archive contains **pycache** folders, the 570 MB tar, a 38 KB log file, and no .gitignore, .env.example or pyproject.toml.
 
-- **Add .gitignore and a .env.example listing the variables the code expects (default\_mongodb, data\_warehouse, openweathermap\_key).**
 - Make it a proper package with **init**.py files and a pyproject.toml, run as python -m ingest\_engine. That removes the sys.path.insert(0, '..') hacks in utils/.
 - Update the README: the examples omit the required -s flag, the config format is out of date, and the environment variables are undocumented. Move the notes file into TODO.md or issues.
 
 ## 8. Smaller cleanups (P3)
 
 - file\_connector writes 'CSV' with a tab separator (call it TSV or use a comma), writes JSON Lines into files named .json, reads directories with os.walk without filtering by extension, builds its result with pd.concat inside a loop (collect and concat once), and its error message mentions Postgres.
-- Add type hints to Run.**init** and replace the dry\_run string with a bool.
 - Python 3.12 is fine; consider pinning pandas 3.0 behaviours (string dtype is now the default) in tests so dtype-based schema output does not change under you.
 
 ## 9. Suggested order of work
@@ -165,6 +114,4 @@ The archive contains **pycache** folders, the 570 MB tar, a 38 KB log file, and 
 | 7 | Repair schema capture and the dbt generator (5) | Depends on steps 3 and 4 |
 | 8 | Lint, type hints, README (6, 8) | Polish once behaviour is stable |
 
-## What I would keep as is
 
-The YAML-driven design, the importlib-style dynamic connectors (with a registry on top), the event/entity data model, the execution\_id JSON logging, the bronze incremental template with dedupe, and the overall folder layout of connectors, transforms and mappers. These are sound; the work is mostly finishing and hardening rather than redesigning.
